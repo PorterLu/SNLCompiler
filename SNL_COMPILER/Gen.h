@@ -1,7 +1,7 @@
 #ifndef GEN_H_INCLUDED
 #define GEN_H_INCLUDED
-// ÓïÒå·ÖÎö + ÖĞ¼ä´úÂëÉú³É£º±éÀúÓï·¨Ê÷£¬¼ì²éÓïÒå£¬Éú³ÉËÄÔªÊ½ĞÎÊ½µÄÖĞ¼ä´úÂë (IRProgram)¡£
-// ÓÃ·¨£ºCodeGenerator gen; if (gen.generate(root)) ÓÃ gen.ir; else ¿´ gen.errors¡£
+// è¯­ä¹‰åˆ†æ + ä¸­é—´ä»£ç ç”Ÿæˆï¼šéå†è¯­æ³•æ ‘ï¼Œæ£€æŸ¥è¯­ä¹‰ï¼Œç”Ÿæˆå››å…ƒå¼å½¢å¼çš„ä¸­é—´ä»£ç  (IRProgram)ã€‚
+// ç”¨æ³•ï¼šCodeGenerator gen; if (gen.generate(root)) ç”¨ gen.ir; else çœ‹ gen.errorsã€‚
 #include "header.h"
 #include "Ir.h"
 #include <map>
@@ -11,10 +11,10 @@ struct TypeInfo
 {
     enum Kind { INT, CHAR, ARRAY, RECORD };
     Kind kind;
-    int size;                                      // Õ¼µÄ×ÖÊı
-    int low, high;                                 // Êı×éÏÂ½ç¡¢ÉÏ½ç
-    TypeInfo* elem;                                // Êı×éÔªËØÀàĞÍ
-    vector<string> fieldNames;                     // ¼ÇÂ¼µÄÓò
+    int size;                                      // å çš„å­—æ•°
+    int low, high;                                 // æ•°ç»„ä¸‹ç•Œã€ä¸Šç•Œ
+    TypeInfo* elem;                                // æ•°ç»„å…ƒç´ ç±»å‹
+    vector<string> fieldNames;                     // è®°å½•çš„åŸŸ
     vector<TypeInfo*> fieldTypes;
     vector<int> fieldOffsets;
     TypeInfo(Kind k) : kind(k), size(1), low(0), high(0), elem(NULL) {}
@@ -30,11 +30,11 @@ struct Symbol
     Kind kind;
     string name;
     TypeInfo* type;             // VAR / TYPE
-    int level;                  // VAR£ºËùÔÚ²ã´Î£»PROC£º¹ı³ÌÌåµÄ²ã´Î
-    int offset;                 // VAR£ºÔÚ»î¶¯¼ÇÂ¼ÀïµÄ×ÖÆ«ÒÆ
-    bool isVarParam;            // VAR£ºÊÇ·ñ var ĞÎ²Î
-    int procIndex;              // PROC£ºÔÚ ir.procs ÀïµÄÏÂ±ê
-    vector<ParamInfo> params;   // PROC£ºĞÎ²Î±í
+    int level;                  // VARï¼šæ‰€åœ¨å±‚æ¬¡ï¼›PROCï¼šè¿‡ç¨‹ä½“çš„å±‚æ¬¡
+    int offset;                 // VARï¼šåœ¨æ´»åŠ¨è®°å½•é‡Œçš„å­—åç§»
+    bool isVarParam;            // VARï¼šæ˜¯å¦ var å½¢å‚
+    int procIndex;              // PROCï¼šåœ¨ ir.procs é‡Œçš„ä¸‹æ ‡
+    vector<ParamInfo> params;   // PROCï¼šå½¢å‚è¡¨
     Symbol(Kind k, const string& n) : kind(k), name(n), type(NULL), level(0), offset(0), isVarParam(false), procIndex(-1) {}
 };
 
@@ -43,15 +43,15 @@ struct ExpRes { Operand opnd; TypeInfo* type; bool isVar; LValue lv; ExpRes() : 
 
 struct CodeGenerator
 {
-    vector<string> errors;                      // ÓïÒå´íÎó£¬Ã¿Ìõ´øĞĞºÅ
-    IRProgram ir;                               // Éú³ÉµÄÖĞ¼ä´úÂë
-    bool generate(Node* root);                  // ³É¹¦·µ»Ø true
+    vector<string> errors;                      // è¯­ä¹‰é”™è¯¯ï¼Œæ¯æ¡å¸¦è¡Œå·
+    IRProgram ir;                               // ç”Ÿæˆçš„ä¸­é—´ä»£ç 
+    bool generate(Node* root);                  // æˆåŠŸè¿”å› true
 
-    vector< map<string, Symbol*> > scopes;      // ×÷ÓÃÓòÕ»
-    int level;                                  // µ±Ç°²ã´Î
-    int nextOffset;                             // µ±Ç°»î¶¯¼ÇÂ¼ÀïÏÂÒ»¸ö¿ÕÏĞ×ÖÆ«ÒÆ
-    int tempBase, tempTop, tempMax;             // ÁÙÊ±±äÁ¿Çø£ºÆğµã¡¢µ±Ç°Î»ÖÃ¡¢¸ßË®Î»
-    vector<int> saved;                          // ½øÈëÇ¶Ì×¹ı³ÌÊ±±£´æÍâ²ãµÄ·ÖÅä×´Ì¬
+    vector< map<string, Symbol*> > scopes;      // ä½œç”¨åŸŸæ ˆ
+    int level;                                  // å½“å‰å±‚æ¬¡
+    int nextOffset;                             // å½“å‰æ´»åŠ¨è®°å½•é‡Œä¸‹ä¸€ä¸ªç©ºé—²å­—åç§»
+    int tempBase, tempTop, tempMax;             // ä¸´æ—¶å˜é‡åŒºï¼šèµ·ç‚¹ã€å½“å‰ä½ç½®ã€é«˜æ°´ä½
+    vector<int> saved;                          // è¿›å…¥åµŒå¥—è¿‡ç¨‹æ—¶ä¿å­˜å¤–å±‚çš„åˆ†é…çŠ¶æ€
     int labelCount;
     TypeInfo* intType; TypeInfo* charType;
 

@@ -12,7 +12,7 @@ struct wordScanner
 {
     int note;
 
-	//±£Áô×ÖÊı×é
+	//ä¿ç•™å­—æ•°ç»„
 	string reservedWord[21]={"program","procedure","type","var","if","then","else","fi",
 		"while","do","endwh","begin","end","read","write","array",
 		"of","record","return","integer","char"};
@@ -20,9 +20,9 @@ struct wordScanner
 	ifstream file;
 	HWND hwnd;
 	string fileName;
-	string tempString;//È¡µÃµÄµ¥´Ê
-	int curLine;//µ±Ç°ĞĞ
-	int offset;//ÎÄ¼şÆ«ÒÆ
+	string tempString;//å–å¾—çš„å•è¯
+	int curLine;//å½“å‰è¡Œ
+	int offset;//æ–‡ä»¶åç§»
 	TokenList tokenList;
 	vector<string> error;
 
@@ -34,8 +34,8 @@ struct wordScanner
 		tempString="";
 		this->fileName=fileName;
 
-		file.open(fileName, ios::in|ios::binary); //´ò¿ªÎÄ¼ş£¬ºóÆÚÈç¹ûÓĞUIÉè¼ÆÒ»¶¨²»ÊÇÕâÃ´´ò¿ªµÄ
-		{	//Ìø¹ı UTF-8 ÎÄ¼ş¿ªÍ·µÄ BOM£¨EF BB BF£©£¬·ñÔò»á±»µ±³ÉÈı¸ö·Ç·¨×Ö·û
+		file.open(fileName, ios::in|ios::binary); //æ‰“å¼€æ–‡ä»¶ï¼ŒåæœŸå¦‚æœæœ‰UIè®¾è®¡ä¸€å®šä¸æ˜¯è¿™ä¹ˆæ‰“å¼€çš„
+		{	//è·³è¿‡ UTF-8 æ–‡ä»¶å¼€å¤´çš„ BOMï¼ˆEF BB BFï¼‰ï¼Œå¦åˆ™ä¼šè¢«å½“æˆä¸‰ä¸ªéæ³•å­—ç¬¦
 			char bom[3]={0,0,0};
 			file.read(bom,3);
 			if(file.gcount()==3&&(unsigned char)bom[0]==0xEF&&(unsigned char)bom[1]==0xBB&&(unsigned char)bom[2]==0xBF)
@@ -52,23 +52,23 @@ struct wordScanner
 		offset=0;
 		tempString="";
 
-		//file.open(fileName); //´ò¿ªÎÄ¼ş£¬ºóÆÚÈç¹ûÓĞUIÉè¼ÆÒ»¶¨²»ÊÇÕâÃ´´ò¿ªµÄ
+		//file.open(fileName); //æ‰“å¼€æ–‡ä»¶ï¼ŒåæœŸå¦‚æœæœ‰UIè®¾è®¡ä¸€å®šä¸æ˜¯è¿™ä¹ˆæ‰“å¼€çš„
 	}
 
-	bool isReservedWord(string tempString);//ÊÇ·ñÊ±±£Áô×Ö£¬×÷ÎªisID()×Ó³ÌĞò
-	int isID();//ÊÇ·ñÊÇ±êÊ¶·û
+	bool isReservedWord(string tempString);//æ˜¯å¦æ—¶ä¿ç•™å­—ï¼Œä½œä¸ºisID()å­ç¨‹åº
+	int isID();//æ˜¯å¦æ˜¯æ ‡è¯†ç¬¦
 	bool isChar();
 	bool isInteger();
 	bool isSingleBoundary();
 	bool isDoubleBoundary();
 	bool isNotes();
-	bool isString();   //×Ö·û´®³£Á¿ "..."£¨ÓïÑÔÀ©Õ¹£¬¸ø write ÓÃ£©
+	bool isString();   //å­—ç¬¦ä¸²å¸¸é‡ "..."ï¼ˆè¯­è¨€æ‰©å±•ï¼Œç»™ write ç”¨ï¼‰
 	int isArray();
 	void start();
 	void printResult();
 	void createTokenFile();
 
-	char getChar()//¶ÁÈ¡ offset ´¦µÄ×Ö·û²¢ºóÒÆ¡£ÈôÇ°Ò»¸ö×Ö·ûÊÇ '\n'£¬ËµÃ÷¸Õ¿ç¹ıÒ»¸ö»»ĞĞ£¬ĞĞºÅ¼ÓÒ»
+	char getChar()//è¯»å– offset å¤„çš„å­—ç¬¦å¹¶åç§»ã€‚è‹¥å‰ä¸€ä¸ªå­—ç¬¦æ˜¯ '\n'ï¼Œè¯´æ˜åˆšè·¨è¿‡ä¸€ä¸ªæ¢è¡Œï¼Œè¡Œå·åŠ ä¸€
 	{
 		char ch;
 		if(offset>=1)
@@ -78,14 +78,14 @@ struct wordScanner
 			if(file.get()=='\n')
 				curLine++;
 		}
-		file.clear();      //¶Áµ½ÎÄ¼şÎ²ºóÁ÷»áÖÃ eof/fail Î»£¬²»ÇåµôµÄ»°ºóÃæµÄ seekg È«²¿Ê§Ğ§
+		file.clear();      //è¯»åˆ°æ–‡ä»¶å°¾åæµä¼šç½® eof/fail ä½ï¼Œä¸æ¸…æ‰çš„è¯åé¢çš„ seekg å…¨éƒ¨å¤±æ•ˆ
 		file.seekg(offset);
 		ch=file.get();
 		offset++;
 		return ch;
 	}
 
-	void undoChar()//»ØÍËÒ»¸ö×Ö·û¡£Èô±»»ØÍËµÄ×Ö·ûÇ°ÃæÊÇ '\n'£¬Ôò³·Ïú¸Õ²ÅµÄĞĞºÅ¼ÓÒ»
+	void undoChar()//å›é€€ä¸€ä¸ªå­—ç¬¦ã€‚è‹¥è¢«å›é€€çš„å­—ç¬¦å‰é¢æ˜¯ '\n'ï¼Œåˆ™æ’¤é”€åˆšæ‰çš„è¡Œå·åŠ ä¸€
 	{
 		if(offset>=2)
 		{
@@ -98,7 +98,7 @@ struct wordScanner
 	}
 
 	bool isNumber(char ch)
-	{     //ÅĞ¶ÏÒ»¸ö×Ö·ûÊÇ·ñÎªÊı×Ö
+	{     //åˆ¤æ–­ä¸€ä¸ªå­—ç¬¦æ˜¯å¦ä¸ºæ•°å­—
 		if((ch>='0')&&(ch<='9'))
 			return true;
 		else
@@ -106,7 +106,7 @@ struct wordScanner
 	}
 
 	bool isLetter(char ch)
-	{        //ÅĞ¶ÏÒ»¸ö×Ö·ûÊÇ·ñÎª×ÖÄ¸
+	{        //åˆ¤æ–­ä¸€ä¸ªå­—ç¬¦æ˜¯å¦ä¸ºå­—æ¯
 		if ((ch>='a')&&(ch<='z'))
 			return true;
 		if ((ch>='A')&&(ch<='Z'))
@@ -119,7 +119,7 @@ struct wordScanner
 	    int i;
 	    Token* token;
 /*
-		for(i=0;i<tokenList.List.size();i++) //ÊÍ·Å¿Õ¼ä
+		for(i=0;i<tokenList.List.size();i++) //é‡Šæ”¾ç©ºé—´
 		{
 			delete(&(tokenList.List[i]));
 		}

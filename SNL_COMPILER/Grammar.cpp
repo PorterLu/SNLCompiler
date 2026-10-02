@@ -460,7 +460,7 @@ void GrammarAnalyzer::initProduction()
     production[103].left=66;
     production[103].right.push_back("/");
 
-    //ÓïÑÔÀ©Õ¹£ºwrite ¿ÉÒÔÖ±½ÓÊä³ö×Ö·û´®³£Á¿
+    //è¯­è¨€æ‰©å±•ï¼šwrite å¯ä»¥ç›´æ¥è¾“å‡ºå­—ç¬¦ä¸²å¸¸é‡
     production[104].left=67;
     production[104].right.push_back("Exp");
     production[104].right.push_back(")");
@@ -746,7 +746,7 @@ void GrammarAnalyzer::initTable(){
 
 
 
-void GrammarAnalyzer::readToken() //¶ÁÈ¡token£¬²¢×öÒ»¶¨µÄ´¦Àí £¬·½±ãÓï·¨·ÖÎö
+void GrammarAnalyzer::readToken() //è¯»å–tokenï¼Œå¹¶åšä¸€å®šçš„å¤„ç† ï¼Œæ–¹ä¾¿è¯­æ³•åˆ†æ
 {
     FILE* file;
     string str;
@@ -756,7 +756,7 @@ void GrammarAnalyzer::readToken() //¶ÁÈ¡token£¬²¢×öÒ»¶¨µÄ´¦Àí £¬·½±ãÓï·¨·ÖÎö
     char line[1024];
     string str1,str2;
     Token* tempToken;
-    //Ã¿ĞĞµÄ¸ñÊ½ÊÇ "µ¥´Ê ÀàĞÍ ĞĞºÅ"£¬×Ö·û´®³£Á¿µÄµ¥´Ê±¾Éí¿ÉÒÔº¬¿Õ¸ñ£¬ËùÒÔ´ÓĞĞÎ²ÍùÇ°²ğ
+    //æ¯è¡Œçš„æ ¼å¼æ˜¯ "å•è¯ ç±»å‹ è¡Œå·"ï¼Œå­—ç¬¦ä¸²å¸¸é‡çš„å•è¯æœ¬èº«å¯ä»¥å«ç©ºæ ¼ï¼Œæ‰€ä»¥ä»è¡Œå°¾å¾€å‰æ‹†
     while(fgets(line,sizeof(line),file))
     {
         string s=line;
@@ -828,7 +828,7 @@ void GrammarAnalyzer::start()
                     break;
                }
                tempOperation->left=topItem.left;
-               tempOperation->oper="Ìæ»»";
+               tempOperation->oper="æ›¿æ¢";
                tempProduction=production[llTable[tempNum][position(token.type)-68]];
                str="";
                for(i=tempProduction.right.size()-1;i>=0;i--)
@@ -839,17 +839,17 @@ void GrammarAnalyzer::start()
                }
                tempOperation->right=str;
                if(str=="@ ")
-                tempOperation->right="¦Å";
+                tempOperation->right="Îµ";
                itemList.push_back(*tempOperation);
-               for(i=0;i<tempProduction.right.size();i++){          //  ¼ÓÈë×Ó½Úµã
+               for(i=0;i<tempProduction.right.size();i++){          //  åŠ å…¥å­èŠ‚ç‚¹
                     Node* tempSon=new Node(UUsignArray[position(tempProduction.right[i])].left);
                     if(UUsignArray[position(tempProduction.right[i])].left=="@")
-                        tempSon->name="¦Å";
+                        tempSon->name="Îµ";
                     tempSon->father=tempRoot;
                     tempRoot->son.push_back(tempSon);
                     nodeList.push_back(tempSon);
                }
-               tempRoot=tempRoot->getSon();      //  ×ªÏò×Ó½Úµã
+               tempRoot=tempRoot->getSon();      //  è½¬å‘å­èŠ‚ç‚¹
                //cout<<tempRoot->name<<endl;
                depth++;
                if(depth>maxDepth)
@@ -860,13 +860,13 @@ void GrammarAnalyzer::start()
            {
                analyzeStack.pop();
                tempOperation->left=token.name;
-               tempOperation->oper="Æ¥Åä";
-               tempRoot->value=token.name;   //°Ñµ¥´Ê¼Çµ½Ê÷µÄÒ¶×ÓÉÏ£¬´úÂëÉú³ÉÒªÓÃ
+               tempOperation->oper="åŒ¹é…";
+               tempRoot->value=token.name;   //æŠŠå•è¯è®°åˆ°æ ‘çš„å¶å­ä¸Šï¼Œä»£ç ç”Ÿæˆè¦ç”¨
                tempRoot->line=token.line;
                itemList.push_back(*tempOperation);
-               if(tokenList.pos<tokenList.num)      //×¢ÒâÈ¡µ½¾¡Í·µÄÊ±ºò²»ÔÊĞíÔÙÈ¡£¬·ñÔòÎŞ·¨Ö´ĞĞºóĞø³ÌĞò
+               if(tokenList.pos<tokenList.num)      //æ³¨æ„å–åˆ°å°½å¤´çš„æ—¶å€™ä¸å…è®¸å†å–ï¼Œå¦åˆ™æ— æ³•æ‰§è¡Œåç»­ç¨‹åº
                     token=tokenList.get();
-               tempRoot=tempRoot->father;       //»Øµ½¸¸½Úµã
+               tempRoot=tempRoot->father;       //å›åˆ°çˆ¶èŠ‚ç‚¹
                depth--;
                while((tempRoot->curSon>tempRoot->son.size()-1)&&(tempRoot->father!=NULL)){
                     tempRoot->curSon=0;
@@ -874,24 +874,24 @@ void GrammarAnalyzer::start()
                     depth--;
                }
                if((tempRoot->curSon>tempRoot->son.size()-1)&&(tempRoot->father==NULL)){
-                    //cout<<"½áÊø-----------------------"<<endl;
+                    //cout<<"ç»“æŸ-----------------------"<<endl;
                     tempRoot->curSon=0;
                     this->root=tempRoot;
                     grammarErrorState=false;
-                    break;//Ê÷½áÊø
+                    break;//æ ‘ç»“æŸ
                }
                else{
-                    tempRoot=tempRoot->getSon(); //ÕÒµ½Õ»¶¥½Úµã
+                    tempRoot=tempRoot->getSon(); //æ‰¾åˆ°æ ˆé¡¶èŠ‚ç‚¹
                     depth++;
                }
            }
            else if(tempNum==106)
            {
-               tempOperation->left="¦Å";
-               tempOperation->oper="Æ¥Åä";
+               tempOperation->left="Îµ";
+               tempOperation->oper="åŒ¹é…";
                itemList.push_back(*tempOperation);
                analyzeStack.pop();
-               tempRoot=tempRoot->father;       //»Øµ½¸¸½Úµã
+               tempRoot=tempRoot->father;       //å›åˆ°çˆ¶èŠ‚ç‚¹
                depth--;
                while((tempRoot->curSon>tempRoot->son.size()-1)&&(tempRoot->father!=NULL)){
                     tempRoot->curSon=0;
@@ -902,10 +902,10 @@ void GrammarAnalyzer::start()
                     tempRoot->curSon=0;
                     this->root=tempRoot;
                     grammarErrorState=true;
-                    break;//Ê÷½áÊø
+                    break;//æ ‘ç»“æŸ
                }
                else{
-                    tempRoot=tempRoot->getSon(); //ÕÒµ½Õ»¶¥½Úµã
+                    tempRoot=tempRoot->getSon(); //æ‰¾åˆ°æ ˆé¡¶èŠ‚ç‚¹
                }
            }
            else
@@ -956,13 +956,13 @@ void GrammarAnalyzer::printTree(Node* root){
             while(temp->son.size()==0){
                 temp=temp->father;
                 n--;
-                while(temp->father!=NULL&&temp->curSon>temp->son.size()-1){ //µ½¸ù½Úµã¾ÍÍ££¬·ñÔò½âÒıÓÃ¿ÕÖ¸Õë
+                while(temp->father!=NULL&&temp->curSon>temp->son.size()-1){ //åˆ°æ ¹èŠ‚ç‚¹å°±åœï¼Œå¦åˆ™è§£å¼•ç”¨ç©ºæŒ‡é’ˆ
                     temp=temp->father;
                     n--;
                 }
             }
         }
     }
-    for(int i=0;i<nodeList.size();i++) //±éÀú¸Ä¶¯ÁË curSon£¬¸´Î»ÒÔ±ãÔÙ´Î±éÀú
+    for(int i=0;i<nodeList.size();i++) //éå†æ”¹åŠ¨äº† curSonï¼Œå¤ä½ä»¥ä¾¿å†æ¬¡éå†
         nodeList[i]->curSon=0;
 }

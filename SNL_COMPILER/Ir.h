@@ -1,22 +1,22 @@
 #ifndef IR_H_INCLUDED
 #define IR_H_INCLUDED
-// ÖĞ¼ä´úÂë£¨ËÄÔªÊ½£©µÄÊı¾İ½á¹¹¡£´úÂëÉú³ÉÆ÷ (Gen.cpp) Éú³ÉËü£¬ĞéÄâ»ú (Vm.cpp) Ö±½ÓÖ´ĞĞËü¡£
+// ä¸­é—´ä»£ç ï¼ˆå››å…ƒå¼ï¼‰çš„æ•°æ®ç»“æ„ã€‚ä»£ç ç”Ÿæˆå™¨ (Gen.cpp) ç”Ÿæˆå®ƒï¼Œè™šæ‹Ÿæœº (Vm.cpp) ç›´æ¥æ‰§è¡Œå®ƒã€‚
 //
-// ÔËĞĞÄ£ĞÍ£ºÄÚ´æÊÇÒ»¸öÕûÊı×ÖÊı×é¡£Ö÷³ÌĞòµÄ±äÁ¿´ÓµØÖ· 0 ¿ªÊ¼£»Ã¿´Îµ÷ÓÃ¹ı³ÌÔÚÕ»ÉÏ·ÖÅäÒ»¸ö»î¶¯¼ÇÂ¼£¬
-// ²¼¾ÖÊÇ [ĞÎ²Î | ¾Ö²¿±äÁ¿ | ÁÙÊ±±äÁ¿]£»display[²ã´Î] Ö¸Ïò¸Ã²ã´Îµ±Ç°µÄ»î¶¯¼ÇÂ¼£¬Ç¶Ì×¹ı³ÌÓÉ´Ë·ÃÎÊ
-// Íâ²ã¹ı³ÌµÄ±äÁ¿¡£var ĞÎ²ÎÕ¼Ò»¸ö×Ö£¬´æµÄÊÇÊµ²ÎµÄµØÖ·¡£
+// è¿è¡Œæ¨¡å‹ï¼šå†…å­˜æ˜¯ä¸€ä¸ªæ•´æ•°å­—æ•°ç»„ã€‚ä¸»ç¨‹åºçš„å˜é‡ä»åœ°å€ 0 å¼€å§‹ï¼›æ¯æ¬¡è°ƒç”¨è¿‡ç¨‹åœ¨æ ˆä¸Šåˆ†é…ä¸€ä¸ªæ´»åŠ¨è®°å½•ï¼Œ
+// å¸ƒå±€æ˜¯ [å½¢å‚ | å±€éƒ¨å˜é‡ | ä¸´æ—¶å˜é‡]ï¼›display[å±‚æ¬¡] æŒ‡å‘è¯¥å±‚æ¬¡å½“å‰çš„æ´»åŠ¨è®°å½•ï¼ŒåµŒå¥—è¿‡ç¨‹ç”±æ­¤è®¿é—®
+// å¤–å±‚è¿‡ç¨‹çš„å˜é‡ã€‚var å½¢å‚å ä¸€ä¸ªå­—ï¼Œå­˜çš„æ˜¯å®å‚çš„åœ°å€ã€‚
 #include "header.h"
 #include <sstream>
 using namespace std;
 
 struct Operand
 {
-    enum Kind { K_NONE, K_CONST, K_VAR, K_REF, K_LABEL, K_PROC, K_STR };   // ¼ÓÇ°×ºÊÇÎªÁË±Ü¿ª windows.h ÀïµÄ CONST ºê
+    enum Kind { K_NONE, K_CONST, K_VAR, K_REF, K_LABEL, K_PROC, K_STR };   // åŠ å‰ç¼€æ˜¯ä¸ºäº†é¿å¼€ windows.h é‡Œçš„ CONST å®
     Kind kind;
-    int value;      // CONST£º³£Á¿Öµ£»VAR / REF£ºÔÚ»î¶¯¼ÇÂ¼ÀïµÄ×ÖÆ«ÒÆ£»LABEL£º±êºÅ£»PROC£º¹ı³Ì±àºÅ
-    int level;      // VAR / REF£ºËùÔÚ²ã´Î£¬0 ÊÇÖ÷³ÌĞò
-    int size;       // VAR / REF£ºËùÖ¸¶ÔÏóÕ¼µÄ×ÖÊı£¬Êı×éºÍ¼ÇÂ¼´óÓÚ 1
-    string name;    // ´òÓ¡ÓÃ
+    int value;      // CONSTï¼šå¸¸é‡å€¼ï¼›VAR / REFï¼šåœ¨æ´»åŠ¨è®°å½•é‡Œçš„å­—åç§»ï¼›LABELï¼šæ ‡å·ï¼›PROCï¼šè¿‡ç¨‹ç¼–å·
+    int level;      // VAR / REFï¼šæ‰€åœ¨å±‚æ¬¡ï¼Œ0 æ˜¯ä¸»ç¨‹åº
+    int size;       // VAR / REFï¼šæ‰€æŒ‡å¯¹è±¡å çš„å­—æ•°ï¼Œæ•°ç»„å’Œè®°å½•å¤§äº 1
+    string name;    // æ‰“å°ç”¨
     Operand() : kind(K_NONE), value(0), level(0), size(1) {}
     static Operand constant(int v) { Operand o; o.kind = K_CONST; o.value = v; return o; }
     static Operand var(const string& n, int lv, int off, int sz) { Operand o; o.kind = K_VAR; o.name = n; o.level = lv; o.value = off; o.size = sz; return o; }
@@ -36,7 +36,7 @@ struct Operand
         case K_STR:   return "\"" + name + "\"";
         default:
             ss << name;
-            if (level != 0 && level != curLevel) ss << "@" << level;   // Íâ²ã¹ı³ÌµÄ±äÁ¿
+            if (level != 0 && level != curLevel) ss << "@" << level;   // å¤–å±‚è¿‡ç¨‹çš„å˜é‡
             return ss.str();
         }
     }
@@ -47,38 +47,38 @@ struct Quad { string op; Operand a, b, r; };
 struct ProcInfo
 {
     string name;
-    int level;          // ¹ı³ÌÌåµÄ²ã´Î£¨¶¥²ã¹ı³ÌÎª 1£©
-    int entry;          // PROC ËÄÔªÊ½µÄÏÂ±ê£¬µ÷ÓÃÊ±´ÓÕâÀï¿ªÊ¼Ö´ĞĞ
-    int paramWords;     // ĞÎ²ÎÕ¼µÄ×ÖÊı
-    int frameWords;     // Õû¸ö»î¶¯¼ÇÂ¼µÄ×ÖÊı
+    int level;          // è¿‡ç¨‹ä½“çš„å±‚æ¬¡ï¼ˆé¡¶å±‚è¿‡ç¨‹ä¸º 1ï¼‰
+    int entry;          // PROC å››å…ƒå¼çš„ä¸‹æ ‡ï¼Œè°ƒç”¨æ—¶ä»è¿™é‡Œå¼€å§‹æ‰§è¡Œ
+    int paramWords;     // å½¢å‚å çš„å­—æ•°
+    int frameWords;     // æ•´ä¸ªæ´»åŠ¨è®°å½•çš„å­—æ•°
 };
 
 struct IRProgram
 {
     vector<Quad> code;
     vector<ProcInfo> procs;
-    vector<string> strings;   // ×Ö·û´®³£Á¿±í£¬WRITES µÄ²Ù×÷ÊıÊÇÏÂ±ê
-    int globalWords;    // Ö÷³ÌĞòµÄ±äÁ¿ºÍÁÙÊ±±äÁ¿Õ¼µÄ×ÖÊı
-    int entry;          // Ö÷³ÌĞòµÚÒ»ÌõËÄÔªÊ½µÄÏÂ±ê
+    vector<string> strings;   // å­—ç¬¦ä¸²å¸¸é‡è¡¨ï¼ŒWRITES çš„æ“ä½œæ•°æ˜¯ä¸‹æ ‡
+    int globalWords;    // ä¸»ç¨‹åºçš„å˜é‡å’Œä¸´æ—¶å˜é‡å çš„å­—æ•°
+    int entry;          // ä¸»ç¨‹åºç¬¬ä¸€æ¡å››å…ƒå¼çš„ä¸‹æ ‡
     IRProgram() : globalWords(0), entry(0) {}
 
-    // ËÄÔªÊ½Ö¸Áî¼¯£º
-    //   ADD/SUB/MUL/DIV a,b,r   r := a op b          LT/EQ a,b,r   r := (a<b) / (a=b)£¬½á¹û 0 »ò 1
-    //   MOV a,-,r               r := a               COPY a,-,r    Õû¿é¸´ÖÆ a.size ¸ö×Ö£¨Êı×é¡¢¼ÇÂ¼¸³Öµ£©
+    // å››å…ƒå¼æŒ‡ä»¤é›†ï¼š
+    //   ADD/SUB/MUL/DIV a,b,r   r := a op b          LT/EQ a,b,r   r := (a<b) / (a=b)ï¼Œç»“æœ 0 æˆ– 1
+    //   MOV a,-,r               r := a               COPY a,-,r    æ•´å—å¤åˆ¶ a.size ä¸ªå­—ï¼ˆæ•°ç»„ã€è®°å½•èµ‹å€¼ï¼‰
     //   LD base,off,r           r := base[off]       ST v,base,off base[off] := v
-    //   ADDR base,off,r         r := base µÄµØÖ· + off£¨Ö®ºó r ×÷Îª REF Ê¹ÓÃ£©
-    //   LABEL L / JMP L / JF a,-,L£¨a Îª 0 Ê±Ìø×ª£©
-    //   READ/READC -,-,r        ¶ÁÈëÕûÊı / ×Ö·û      WRITE/WRITEC a  Êä³öÕûÊı / ×Ö·û²¢»»ĞĞ
-    //   WRITES a                Êä³ö×Ö·û´®³£Á¿²¢»»ĞĞ£¨a ÊÇ×Ö·û´®±íÏÂ±ê£©
-    //   ARG a£¨°´Öµ´«µİ£¬Õû¿éÑ¹Õ»£© / ARGREF base,off£¨var ²ÎÊı£¬Ñ¹µØÖ·£© / CALL p / RET [a]
-    //   PROC p ... ENDP p       ¹ı³ÌÌåµÄ·¶Î§         ENTRY / HALT  Ö÷³ÌĞòµÄ¿ªÊ¼Óë½áÊø
+    //   ADDR base,off,r         r := base çš„åœ°å€ + offï¼ˆä¹‹å r ä½œä¸º REF ä½¿ç”¨ï¼‰
+    //   LABEL L / JMP L / JF a,-,Lï¼ˆa ä¸º 0 æ—¶è·³è½¬ï¼‰
+    //   READ/READC -,-,r        è¯»å…¥æ•´æ•° / å­—ç¬¦      WRITE/WRITEC a  è¾“å‡ºæ•´æ•° / å­—ç¬¦å¹¶æ¢è¡Œ
+    //   WRITES a                è¾“å‡ºå­—ç¬¦ä¸²å¸¸é‡å¹¶æ¢è¡Œï¼ˆa æ˜¯å­—ç¬¦ä¸²è¡¨ä¸‹æ ‡ï¼‰
+    //   ARG aï¼ˆæŒ‰å€¼ä¼ é€’ï¼Œæ•´å—å‹æ ˆï¼‰ / ARGREF base,offï¼ˆvar å‚æ•°ï¼Œå‹åœ°å€ï¼‰ / CALL p / RET [a]
+    //   PROC p ... ENDP p       è¿‡ç¨‹ä½“çš„èŒƒå›´         ENTRY / HALT  ä¸»ç¨‹åºçš„å¼€å§‹ä¸ç»“æŸ
     string listing() const
     {
         stringstream ss;
         for (size_t i = 0; i < procs.size(); i++)
-            ss << "; ¹ı³Ì " << procs[i].name << ": ²ã´Î " << procs[i].level << ", Èë¿Ú " << procs[i].entry
-               << ", ĞÎ²Î " << procs[i].paramWords << " ×Ö, »î¶¯¼ÇÂ¼ " << procs[i].frameWords << " ×Ö\n";
-        ss << "; Ö÷³ÌĞò: Èë¿Ú " << entry << ", ±äÁ¿Çø " << globalWords << " ×Ö\n";
+            ss << "; è¿‡ç¨‹ " << procs[i].name << ": å±‚æ¬¡ " << procs[i].level << ", å…¥å£ " << procs[i].entry
+               << ", å½¢å‚ " << procs[i].paramWords << " å­—, æ´»åŠ¨è®°å½• " << procs[i].frameWords << " å­—\n";
+        ss << "; ä¸»ç¨‹åº: å…¥å£ " << entry << ", å˜é‡åŒº " << globalWords << " å­—\n";
         int lv = 0;
         for (size_t i = 0; i < code.size(); i++)
         {

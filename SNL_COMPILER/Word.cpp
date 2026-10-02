@@ -5,7 +5,7 @@
 #include<sstream>
 using namespace std;
 
-static string lineStr(int line) //ĞĞºÅ×ª×Ö·û´®£¨Ô­À´ÓÃ curLine+0x30 Æ´½Ó£¬Ö»ÄÜ±íÊ¾ 0~9£©
+static string lineStr(int line) //è¡Œå·è½¬å­—ç¬¦ä¸²ï¼ˆåŸæ¥ç”¨ curLine+0x30 æ‹¼æ¥ï¼Œåªèƒ½è¡¨ç¤º 0~9ï¼‰
 {
 	stringstream ss;
 	ss<<line;
@@ -15,7 +15,7 @@ bool wordScanner::isChar()
 {
 	Token* token;
 	char ch;
-	bool isError=false; //±¾´ÎÊ¶±ğÊÇ·ñ³ö´í¡£Ô­À´Ö±½ÓÄÃÈ«¾Ö wordErrorState ×ö·ÖÖ§£¬Ç°ÃæÒ»µ©³ö¹ı´í£¬ºóÃæËùÓĞºÏ·¨µÄ×Ö·û³£Á¿¶¼»á±»ÎóÅĞ
+	bool isError=false; //æœ¬æ¬¡è¯†åˆ«æ˜¯å¦å‡ºé”™ã€‚åŸæ¥ç›´æ¥æ‹¿å…¨å±€ wordErrorState åšåˆ†æ”¯ï¼Œå‰é¢ä¸€æ—¦å‡ºè¿‡é”™ï¼Œåé¢æ‰€æœ‰åˆæ³•çš„å­—ç¬¦å¸¸é‡éƒ½ä¼šè¢«è¯¯åˆ¤
 	ch=getChar();
     while(ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')
         ch=getChar();
@@ -24,11 +24,11 @@ bool wordScanner::isChar()
         undoChar();
 		return false;
     }
-	ch=getChar();          //¶Á'ºóµÄµÚÒ»¸ö×Ö·û
+	ch=getChar();          //è¯»'åçš„ç¬¬ä¸€ä¸ªå­—ç¬¦
     if(isNumber(ch)||isLetter(ch))
 	{
         tempString+=ch;
-        ch=getChar();             //¶Á×ÖÄ¸»òÊı×ÖºóµÄµÚÒ»¸ö×Ö·û
+        ch=getChar();             //è¯»å­—æ¯æˆ–æ•°å­—åçš„ç¬¬ä¸€ä¸ªå­—ç¬¦
     }
     else
 	{
@@ -49,13 +49,13 @@ bool wordScanner::isChar()
 		else
 		{
 			tempString='\'';
-			undoChar();         //  »ØÍËÁ½´Î£¬½â¾ö³öÏÖÀàËÆ '12 ÕâÖÖĞÎÊ½
+			undoChar();         //  å›é€€ä¸¤æ¬¡ï¼Œè§£å†³å‡ºç°ç±»ä¼¼ '12 è¿™ç§å½¢å¼
 			undoChar();
 			isError=true;
 		}
     }
 
-	string str="³ÌĞòµÚ"+lineStr(curLine)+"ĞĞÓĞ´íÎóµ¥´Ê£º "+tempString;
+	string str="ç¨‹åºç¬¬"+lineStr(curLine)+"è¡Œæœ‰é”™è¯¯å•è¯ï¼š "+tempString;
 	tempString="";
 	error.push_back(str);
 	wordErrorState=true;
@@ -79,7 +79,7 @@ bool wordScanner::isInteger()
         tempString+=ch;
         ch=getChar();
     }
-    undoChar();     //»ØÍËÎÄ¼ş×Ö·ûÖ¸ÕëÒ»Î»
+    undoChar();     //å›é€€æ–‡ä»¶å­—ç¬¦æŒ‡é’ˆä¸€ä½
 	token=new Token(tempString,"integer",curLine);
     tokenList.push(*token);
     //cout<<tempString<<endl;
@@ -124,7 +124,7 @@ bool wordScanner::isDoubleBoundary()
 	tempString+=ch;
     ch=getChar();
     if(ch=='='){
-        tempString+=ch;     //Ë«·Ö½ç
+        tempString+=ch;     //åŒåˆ†ç•Œ
 		token=new Token(tempString,"doubleBoundary",curLine);
 		tokenList.push(*token);
 		//cout<<tempString<<endl;
@@ -134,7 +134,7 @@ bool wordScanner::isDoubleBoundary()
     else
 	{
         undoChar();
-        str="³ÌĞòµÚ"+lineStr(curLine)+"ĞĞÓĞ´íÎóµ¥´Ê£º "+tempString;
+        str="ç¨‹åºç¬¬"+lineStr(curLine)+"è¡Œæœ‰é”™è¯¯å•è¯ï¼š "+tempString;
 		error.push_back(str);
 		wordErrorState=true;
 		tempString="";
@@ -161,9 +161,9 @@ bool wordScanner::isNotes()
 	if(ch!='}')
 	{
 		 string str;
-	     str="³ÌĞòµÚ";
+	     str="ç¨‹åºç¬¬";
 	     str+=lineStr(curLine);
-	     str+="ĞĞÓĞ´íÎóµ¥´Ê£º ";
+	     str+="è¡Œæœ‰é”™è¯¯å•è¯ï¼š ";
 	     str+=tempString;
 	     tempString="";
 	     error.push_back(str);
@@ -189,7 +189,7 @@ bool wordScanner::isString()
 		undoChar();
 		return false;
 	}
-	//×Ö·û´®³£Á¿ "..."£º²»Ö§³Ö×ªÒå£¬²»ÄÜ¿çĞĞ
+	//å­—ç¬¦ä¸²å¸¸é‡ "..."ï¼šä¸æ”¯æŒè½¬ä¹‰ï¼Œä¸èƒ½è·¨è¡Œ
 	int line=curLine;
 	ch=getChar();
 	while(!file.eof()&&ch!='"'&&ch!='\n')
@@ -199,7 +199,7 @@ bool wordScanner::isString()
 	}
 	if(ch!='"')
 	{
-		error.push_back("³ÌĞòµÚ"+lineStr(line)+"ĞĞÓĞ´íÎóµ¥´Ê£º \""+tempString);
+		error.push_back("ç¨‹åºç¬¬"+lineStr(line)+"è¡Œæœ‰é”™è¯¯å•è¯ï¼š \""+tempString);
 		wordErrorState=true;
 		tempString="";
 		return false;
@@ -223,7 +223,7 @@ int wordScanner::isArray()
 	}
 	tempString+=ch;
     ch=getChar();
-    if(ch=='.'){     //Êı×é·Ö½ç
+    if(ch=='.'){     //æ•°ç»„åˆ†ç•Œ
         tempString+=ch;
 		token=new Token(tempString,"arrayBound",curLine);
 		tokenList.push(*token);
@@ -231,8 +231,8 @@ int wordScanner::isArray()
         return true;
     }
     else{
-        undoChar();     //»ØÍËÎÄ¼ş×Ö·ûÖ¸ÕëÒ»Î»
-        //µ¥¶ÀÒ»¸öµã£ººóÃæÖ»Ê£¿Õ°×Ö±µ½ÎÄ¼şÎ²Ê±²ÅÊÇ³ÌĞò½áÊø±êÖ¾£»·ñÔòÊÇ¼ÇÂ¼Óò·ÃÎÊ rec.x ÀïµÄ "."£¨Ô­À´Ò»ÂÉµ±×÷³ÌĞò½áÊø£¬¼ÇÂ¼ÀàĞÍÎŞ·¨Ê¹ÓÃ£©
+        undoChar();     //å›é€€æ–‡ä»¶å­—ç¬¦æŒ‡é’ˆä¸€ä½
+        //å•ç‹¬ä¸€ä¸ªç‚¹ï¼šåé¢åªå‰©ç©ºç™½ç›´åˆ°æ–‡ä»¶å°¾æ—¶æ‰æ˜¯ç¨‹åºç»“æŸæ ‡å¿—ï¼›å¦åˆ™æ˜¯è®°å½•åŸŸè®¿é—® rec.x é‡Œçš„ "."ï¼ˆåŸæ¥ä¸€å¾‹å½“ä½œç¨‹åºç»“æŸï¼Œè®°å½•ç±»å‹æ— æ³•ä½¿ç”¨ï¼‰
         int n=0;
         do { ch=getChar(); n++; } while(!file.eof()&&(ch=='\n'||ch=='\r'||ch=='\t'||ch==' '));
         bool atEnd=file.eof();
@@ -249,8 +249,8 @@ int wordScanner::isArray()
     }
 }
 
-/*×Ü¹²ÓĞ20¸ö±£Áô×Ö£¬ÒÑÔÚheader.hÖĞ¶¨Òå£¬±éÀú±£Áô×ÖÊı×é£¬
-Óëµ±Ç°±êÊ¶·û±È½Ï£¬½øĞĞÅĞ¶Ï£¬ÊäÈëµÄ²ÎÊıÎª¿ÉÄÜÊÇ±£Áô×ÖµÄ±êÊ¶·û*/
+/*æ€»å…±æœ‰20ä¸ªä¿ç•™å­—ï¼Œå·²åœ¨header.hä¸­å®šä¹‰ï¼Œéå†ä¿ç•™å­—æ•°ç»„ï¼Œ
+ä¸å½“å‰æ ‡è¯†ç¬¦æ¯”è¾ƒï¼Œè¿›è¡Œåˆ¤æ–­ï¼Œè¾“å…¥çš„å‚æ•°ä¸ºå¯èƒ½æ˜¯ä¿ç•™å­—çš„æ ‡è¯†ç¬¦*/
 bool wordScanner::isReservedWord(string tempString)
 {
 	int i;
@@ -262,43 +262,43 @@ bool wordScanner::isReservedWord(string tempString)
 	return false;
 }
 
-/*ÅĞ¶ÏÊÇ·ñÊÇ±êÊ¶·ûµÄº¯Êı£¬·µ»ØÖµÎª0²»ÊÇ±êÊ¶·û£¬1Ê±ÊÇ±êÊ¶·û£¬2Ê±ÊÇ±£Áô×Ö£¬ÕâÀï½«±£Áô×Ö¿´×÷ÌØÊâµÄ±êÊ¶·û*/
+/*åˆ¤æ–­æ˜¯å¦æ˜¯æ ‡è¯†ç¬¦çš„å‡½æ•°ï¼Œè¿”å›å€¼ä¸º0ä¸æ˜¯æ ‡è¯†ç¬¦ï¼Œ1æ—¶æ˜¯æ ‡è¯†ç¬¦ï¼Œ2æ—¶æ˜¯ä¿ç•™å­—ï¼Œè¿™é‡Œå°†ä¿ç•™å­—çœ‹ä½œç‰¹æ®Šçš„æ ‡è¯†ç¬¦*/
 int wordScanner::isID()
 {
-	char curChar;  //µ±Ç°×Ö·û
+	char curChar;  //å½“å‰å­—ç¬¦
 	Token* token;
-	bool isOver=false,isID=false; //isOver±íÊ¾ÊÇ·ñ¿ÉÒÔÍÆ³ö×Ô¶¯»ú£¬isID±íÊ¾ÊÇ·ñÊÇ±êÊ¶·û
-	int transTable[2][2]={{-1,1}, {1,1}};//×ª»»±í£¬×Ô¶¯»úµÄ×´Ì¬×ª»»Êı×é£¬-1±íÊ¾½øÈë´íÎó×´Ì¬
-	int state=0; //×Ô¶¯³õÊ¼×´Ì¬
-	curChar = getChar(); //»ñÈ¡Ò»¸ö×Ö·û
-	//¿ªÊ¼Ç°ÏÈ³ıµô¿Õ°××Ö·û£¬¿Õ¸ñ£¬ÖÆ±í·û£¬»Ø³µ
+	bool isOver=false,isID=false; //isOverè¡¨ç¤ºæ˜¯å¦å¯ä»¥æ¨å‡ºè‡ªåŠ¨æœºï¼ŒisIDè¡¨ç¤ºæ˜¯å¦æ˜¯æ ‡è¯†ç¬¦
+	int transTable[2][2]={{-1,1}, {1,1}};//è½¬æ¢è¡¨ï¼Œè‡ªåŠ¨æœºçš„çŠ¶æ€è½¬æ¢æ•°ç»„ï¼Œ-1è¡¨ç¤ºè¿›å…¥é”™è¯¯çŠ¶æ€
+	int state=0; //è‡ªåŠ¨åˆå§‹çŠ¶æ€
+	curChar = getChar(); //è·å–ä¸€ä¸ªå­—ç¬¦
+	//å¼€å§‹å‰å…ˆé™¤æ‰ç©ºç™½å­—ç¬¦ï¼Œç©ºæ ¼ï¼Œåˆ¶è¡¨ç¬¦ï¼Œå›è½¦
     while(curChar=='\n'||curChar=='\r'||curChar=='\t'||curChar==' ')
         curChar=getChar();
-	//½øÈë±êÊ¶·ûÅĞ¶ÏµÄ×Ô¶¯»ú£¬×ÖÄ¸¿ªÍ·£¬Êı×ÖºÍ×ÖÄ¸×é³ÉµÄ×Ö·û´®
-	while(((curChar>=48&&curChar<=57)||(curChar>=65&&curChar<=90)||(curChar>=97&&curChar<=122))&&!isOver)//È·¶¨ÊÇ·ñÊÇÔÚ±íÊ¾·ûµÄ×Ö·û¼¯ºÏÀï
+	//è¿›å…¥æ ‡è¯†ç¬¦åˆ¤æ–­çš„è‡ªåŠ¨æœºï¼Œå­—æ¯å¼€å¤´ï¼Œæ•°å­—å’Œå­—æ¯ç»„æˆçš„å­—ç¬¦ä¸²
+	while(((curChar>=48&&curChar<=57)||(curChar>=65&&curChar<=90)||(curChar>=97&&curChar<=122))&&!isOver)//ç¡®å®šæ˜¯å¦æ˜¯åœ¨è¡¨ç¤ºç¬¦çš„å­—ç¬¦é›†åˆé‡Œ
 	{
 		switch(state)
 		{
 			case 0:
-				if(curChar>=48&&curChar<=57)  //×´Ì¬0ÊÇ³õÊ¼×´Ì¬£¬ÊäÈëÊı×Ö£¬ÒâÎ¶×ÅÊı×Ö¿ªÍ·£¬²»·ûºÏ¶¨Òå£¬ÍË³ö×Ô¶¯»ú
+				if(curChar>=48&&curChar<=57)  //çŠ¶æ€0æ˜¯åˆå§‹çŠ¶æ€ï¼Œè¾“å…¥æ•°å­—ï¼Œæ„å‘³ç€æ•°å­—å¼€å¤´ï¼Œä¸ç¬¦åˆå®šä¹‰ï¼Œé€€å‡ºè‡ªåŠ¨æœº
 					isOver=true;
 				else
 				{
-					state=transTable[state][1]; //×ª»»
-                    tempString+=curChar; //Éú³É×Ö·û´®
-					curChar=getChar(); //È¥ÏÂÒ»¸ö×Ö·û
-					isID=true;		//×Ö·û´®£¬Ò»ºÅ×´Ì¬Ê±ÖÕÖ¹×´Ì¬
+					state=transTable[state][1]; //è½¬æ¢
+                    tempString+=curChar; //ç”Ÿæˆå­—ç¬¦ä¸²
+					curChar=getChar(); //å»ä¸‹ä¸€ä¸ªå­—ç¬¦
+					isID=true;		//å­—ç¬¦ä¸²ï¼Œä¸€å·çŠ¶æ€æ—¶ç»ˆæ­¢çŠ¶æ€
 				}
 				break;
 			case 1:
-				if(curChar>=48&&curChar<=57) //Êı×Ö
+				if(curChar>=48&&curChar<=57) //æ•°å­—
 				{
 					state=transTable[state][0];
                     tempString+=curChar;
 					curChar=getChar();
 					isID=true;
 				}
-				else  //×ÖÄ¸
+				else  //å­—æ¯
 				{
 					state=transTable[state][1];
                     tempString+=curChar;
@@ -307,8 +307,8 @@ int wordScanner::isID()
 				}
 		}
 	}
-	undoChar(); //»ØÍËÒ»¸ö×Ö·û£¬ÒòÎª×îĞÂµÄ×Ö·ûÒ»¶¨²»ÊÇ±êÊ¶·ûµÄ²¿·Ö
-	if(isID&&isReservedWord(tempString))//ÊÇ·ñÊÇ±£Áô×Ö
+	undoChar(); //å›é€€ä¸€ä¸ªå­—ç¬¦ï¼Œå› ä¸ºæœ€æ–°çš„å­—ç¬¦ä¸€å®šä¸æ˜¯æ ‡è¯†ç¬¦çš„éƒ¨åˆ†
+	if(isID&&isReservedWord(tempString))//æ˜¯å¦æ˜¯ä¿ç•™å­—
 	{
 		token=new Token(tempString,"reservedWord",curLine);
 		tokenList.push(*token);
@@ -335,7 +335,7 @@ void wordScanner::printResult()
 	for(i=0;i<tokenList.num;i++)
 	{
 		token=&tokenList.List[i];
-		cout<<token->name<<" "<<token->type<<" µÚ"<<token->line<<"ĞĞ"<<endl;
+		cout<<token->name<<" "<<token->type<<" ç¬¬"<<token->line<<"è¡Œ"<<endl;
 	}
 }
 
@@ -357,10 +357,10 @@ void wordScanner::start()
 {
     //file.open(fileName);
     cout<<"word start"<<endl;
-	int ans; //ÅĞ¶Ï·û
+	int ans; //åˆ¤æ–­ç¬¦
 	char ch;
-	cout<<"----------------------´Ê·¨·ÖÎö---------------------"<<endl;
-	while(!file.eof())//ÎÄ¼şÎ´½áÊø
+	cout<<"----------------------è¯æ³•åˆ†æ---------------------"<<endl;
+	while(!file.eof())//æ–‡ä»¶æœªç»“æŸ
 	{
 		size_t errBefore=error.size();
 
@@ -374,22 +374,22 @@ void wordScanner::start()
 		else if(ans=isArray()){if(ans==2) break;}
 		else
 		{
-			 if(error.size()>errBefore) continue; //Ä³¸ö×Ó³ÌĞòÒÑ¾­±¨´í²¢»ØÍËÁËÎ»ÖÃ£¬ÖØĞÂ´Ó isID ¿ªÊ¼Ê¶±ğ
+			 if(error.size()>errBefore) continue; //æŸä¸ªå­ç¨‹åºå·²ç»æŠ¥é”™å¹¶å›é€€äº†ä½ç½®ï¼Œé‡æ–°ä» isID å¼€å§‹è¯†åˆ«
 			 ch=getChar();
-			 if(file.eof()) break; //¶Áµ½ÎÄ¼şÎ²£¨Ô´³ÌĞòÃ»ÓĞÒÔ . ½áÊø£©£¬Õı³£½áÊø
+			 if(file.eof()) break; //è¯»åˆ°æ–‡ä»¶å°¾ï¼ˆæºç¨‹åºæ²¡æœ‰ä»¥ . ç»“æŸï¼‰ï¼Œæ­£å¸¸ç»“æŸ
 			 string str;
-             str="Î´Öª´íÎó ";
+             str="æœªçŸ¥é”™è¯¯ ";
              str+=ch;
-             str+=" µÚ";
+             str+=" ç¬¬";
              str+=lineStr(curLine);
-             str+="ĞĞ";
+             str+="è¡Œ";
              tempString="";
              error.push_back(str);
              wordErrorState=true;
 		}
 	}
 
-	wordErrorState=!error.empty(); //±¾´ÎÖ»Òª¼ÇÂ¼¹ı´íÎó¾ÍÖÃ´íÎó×´Ì¬£¨Ô­À´µ½ÎÄ¼şÎ²»á°ÑÒÑÓĞ´íÎóÇåµô£©
+	wordErrorState=!error.empty(); //æœ¬æ¬¡åªè¦è®°å½•è¿‡é”™è¯¯å°±ç½®é”™è¯¯çŠ¶æ€ï¼ˆåŸæ¥åˆ°æ–‡ä»¶å°¾ä¼šæŠŠå·²æœ‰é”™è¯¯æ¸…æ‰ï¼‰
 
 	if(wordErrorState==false)
     {

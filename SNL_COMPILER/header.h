@@ -22,27 +22,27 @@ struct Token
 	}
 };
 
-//TokenĞòÁĞµÄÊı¾İ½á¹¹
+//Tokenåºåˆ—çš„æ•°æ®ç»“æ„
 struct TokenList
 {
-	vector<Token> List;  //ÓÃÓÚ´æ´¢token
-	int num;			//token³¤¶È
-	int pos;			//µ±Ç°µÄÖ¸ÕëÖ¸ÏòÄÄÒ»¸ötoken
+	vector<Token> List;  //ç”¨äºå­˜å‚¨token
+	int num;			//tokené•¿åº¦
+	int pos;			//å½“å‰çš„æŒ‡é’ˆæŒ‡å‘å“ªä¸€ä¸ªtoken
 
-	void push(Token& token) //ÏòĞòÁĞÑ¹ÈëÒ»¸ötoken
+	void push(Token& token) //å‘åºåˆ—å‹å…¥ä¸€ä¸ªtoken
 	{
 		List.push_back(token);
 		num++;
 	}
 
-	Token get()   //È¡µÃÒ»¸ötoken£¬Ö¸ÕëºóÒÆÒ»Î»
+	Token get()   //å–å¾—ä¸€ä¸ªtokenï¼ŒæŒ‡é’ˆåç§»ä¸€ä½
 	{
 		Token temp = List[pos];
 		pos++;
 		return temp;
 	}
 
-	void unget(){pos=pos>0?pos-1:0;} //Ö¸Õë»ØÍËÒ»Î»
+	void unget(){pos=pos>0?pos-1:0;} //æŒ‡é’ˆå›é€€ä¸€ä½
 
 	TokenList(){num=0; pos=0;}
 };
@@ -53,8 +53,8 @@ struct Node
     vector<Node*> son;
     Node* father;
     int curSon;
-    string value;   //ÖÕ½á·û½áµã¶ÔÓ¦µÄµ¥´Ê£¨±êÊ¶·ûÃû¡¢ÊıÖµµÈ£©£¬´úÂëÉú³ÉÒªÓÃ
-    int line;       //¸Ãµ¥´ÊËùÔÚµÄĞĞ
+    string value;   //ç»ˆç»“ç¬¦ç»“ç‚¹å¯¹åº”çš„å•è¯ï¼ˆæ ‡è¯†ç¬¦åã€æ•°å€¼ç­‰ï¼‰ï¼Œä»£ç ç”Ÿæˆè¦ç”¨
+    int line;       //è¯¥å•è¯æ‰€åœ¨çš„è¡Œ
 
     Node(string n){
         name=n;

@@ -66,7 +66,7 @@ struct Item
 struct GrammarAnalyzer
 {
     Production production[106];
-    int llTable[68][41]; //ÖÕ½á·ûÓĞ 40 ¸ö£¨".." ÊÇµÚ 40 ¸ö£©£¬Ô­À´ 39 ÁĞ»áÔ½½ç
+    int llTable[68][41]; //ç»ˆç»“ç¬¦æœ‰ 40 ä¸ªï¼ˆ".." æ˜¯ç¬¬ 40 ä¸ªï¼‰ï¼ŒåŸæ¥ 39 åˆ—ä¼šè¶Šç•Œ
     UUsign UUsignArray[109];
     TokenList tokenList;
     Node* root;
@@ -104,7 +104,7 @@ struct GrammarAnalyzer
         int i;
 	    Token* token;
 /*
-		for(i=0;i<tokenList.List.size();i++) //ÊÍ·Å¿Õ¼ä
+		for(i=0;i<tokenList.List.size();i++) //é‡Šæ”¾ç©ºé—´
 		{
 			delete(&(tokenList.List[i]));
 		}

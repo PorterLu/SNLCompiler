@@ -1,11 +1,11 @@
 #ifndef VM_H_INCLUDED
 #define VM_H_INCLUDED
-// ÖĞ¼ä´úÂëĞéÄâ»ú£ºÖ±½ÓÖ´ĞĞ Gen.cpp Éú³ÉµÄËÄÔªÊ½£¬³ÌĞò²»ĞèÒªÔÙ¾­¹ıÈÎºÎ±ğµÄ±àÒëÆ÷¡£
+// ä¸­é—´ä»£ç è™šæ‹Ÿæœºï¼šç›´æ¥æ‰§è¡Œ Gen.cpp ç”Ÿæˆçš„å››å…ƒå¼ï¼Œç¨‹åºä¸éœ€è¦å†ç»è¿‡ä»»ä½•åˆ«çš„ç¼–è¯‘å™¨ã€‚
 #include "Ir.h"
 
-struct VmIO                                   // ³ÌĞòµÄÊäÈëÊä³ö£¬ÓÉÃüÁîĞĞ°æ / GUI °æ¸÷×ÔÊµÏÖ
+struct VmIO                                   // ç¨‹åºçš„è¾“å…¥è¾“å‡ºï¼Œç”±å‘½ä»¤è¡Œç‰ˆ / GUI ç‰ˆå„è‡ªå®ç°
 {
-    virtual bool readInt(int& v) = 0;         // ·µ»Ø false ±íÊ¾Ã»ÓĞÊäÈëÁË
+    virtual bool readInt(int& v) = 0;         // è¿”å› false è¡¨ç¤ºæ²¡æœ‰è¾“å…¥äº†
     virtual bool readChar(char& c) = 0;
     virtual void write(const string& s) = 0;
     virtual ~VmIO() {}
@@ -15,20 +15,20 @@ struct Vm
 {
     const IRProgram& ir;
     VmIO& io;
-    vector<int> mem;                          // Õû¸öÄÚ´æ£¬ÒÔ×ÖÎªµ¥Î»
-    vector<int> display;                      // display[²ã´Î] = ¸Ã²ã´Îµ±Ç°»î¶¯¼ÇÂ¼µÄÆğÊ¼µØÖ·
-    vector<int> args;                         // µ÷ÓÃÇ°Ñ¹ÈëµÄÊµ²Î
+    vector<int> mem;                          // æ•´ä¸ªå†…å­˜ï¼Œä»¥å­—ä¸ºå•ä½
+    vector<int> display;                      // display[å±‚æ¬¡] = è¯¥å±‚æ¬¡å½“å‰æ´»åŠ¨è®°å½•çš„èµ·å§‹åœ°å€
+    vector<int> args;                         // è°ƒç”¨å‰å‹å…¥çš„å®å‚
     struct Frame { int level, savedDisplay, base, retPc; };
-    vector<Frame> frames;                     // ¿ØÖÆÕ»
+    vector<Frame> frames;                     // æ§åˆ¶æ ˆ
     vector<int> labelPos;
     int sp, pc;
     long steps, maxSteps;
-    string error;                             // ÔËĞĞ´íÎóĞÅÏ¢
+    string error;                             // è¿è¡Œé”™è¯¯ä¿¡æ¯
 
     Vm(const IRProgram& p, VmIO& i, int memWords = 1 << 20);
-    bool run();                               // Õı³£½áÊø·µ»Ø true£»ÔËĞĞ´íÎó·µ»Ø false ²¢Ìî error
-    int addr(const Operand& o);               // ±äÁ¿²Ù×÷ÊıµÄµØÖ·
-    int val(const Operand& o);                // ²Ù×÷ÊıµÄÖµ
+    bool run();                               // æ­£å¸¸ç»“æŸè¿”å› trueï¼›è¿è¡Œé”™è¯¯è¿”å› false å¹¶å¡« error
+    int addr(const Operand& o);               // å˜é‡æ“ä½œæ•°çš„åœ°å€
+    int val(const Operand& o);                // æ“ä½œæ•°çš„å€¼
     int jump(const Operand& label);
 };
 #endif // VM_H_INCLUDED

@@ -3,18 +3,18 @@
 #include <cstdlib>
 using namespace std;
 
-static bool isEps(Node* n) { return n->son.empty() && n->value.empty(); }   // ¦Å ½áµã£º¼ÈÎŞ×Ó½áµãÒ²ÎŞµ¥´Ê
+static bool isEps(Node* n) { return n->son.empty() && n->value.empty(); }   // Îµ ç»“ç‚¹ï¼šæ—¢æ— å­ç»“ç‚¹ä¹Ÿæ— å•è¯
 static string itos(int v) { stringstream ss; ss << v; return ss.str(); }
 static bool sameType(TypeInfo* a, TypeInfo* b) { return (a->isScalar() && b->isScalar()) || a == b; }
 
-// ---------------- ¹¤¾ß ----------------
-int CodeGenerator::lineOf(Node* n)          // ×ÓÊ÷ÀïµÚÒ»¸öµ¥´ÊµÄĞĞºÅ
+// ---------------- å·¥å…· ----------------
+int CodeGenerator::lineOf(Node* n)          // å­æ ‘é‡Œç¬¬ä¸€ä¸ªå•è¯çš„è¡Œå·
 {
     if (n->son.empty()) return n->line;
     for (size_t i = 0; i < n->son.size(); i++) { int l = lineOf(n->son[i]); if (l) return l; }
     return 0;
 }
-void CodeGenerator::error(int line, const string& msg) { errors.push_back("µÚ" + itos(line) + "ĞĞ£º" + msg); }
+void CodeGenerator::error(int line, const string& msg) { errors.push_back("ç¬¬" + itos(line) + "è¡Œï¼š" + msg); }
 void CodeGenerator::pushScope() { scopes.push_back(map<string, Symbol*>()); }
 void CodeGenerator::popScope() { scopes.pop_back(); }
 Symbol* CodeGenerator::lookup(const string& name)
@@ -28,13 +28,13 @@ Symbol* CodeGenerator::lookup(const string& name)
 }
 bool CodeGenerator::declare(Symbol* s, int line)
 {
-    if (scopes.back().count(s->name)) { error(line, "±êÊ¶·û " + s->name + " ÖØ¸´ÉùÃ÷"); return false; }
+    if (scopes.back().count(s->name)) { error(line, "æ ‡è¯†ç¬¦ " + s->name + " é‡å¤å£°æ˜"); return false; }
     scopes.back()[s->name] = s;
     return true;
 }
 void CodeGenerator::checkScalar(ExpRes& r, int line)
 {
-    if (r.type && !r.type->isScalar()) { error(line, "´Ë´¦µÄ±í´ïÊ½±ØĞëÊÇÕûÊı»ò×Ö·ûÀàĞÍ"); r.type = NULL; }
+    if (r.type && !r.type->isScalar()) { error(line, "æ­¤å¤„çš„è¡¨è¾¾å¼å¿…é¡»æ˜¯æ•´æ•°æˆ–å­—ç¬¦ç±»å‹"); r.type = NULL; }
 }
 void CodeGenerator::emit(const string& op, const Operand& a, const Operand& b, const Operand& r)
 {
@@ -55,7 +55,7 @@ Operand CodeGenerator::operandOf(Symbol* s)
     return Operand::var(s->name, s->level, s->offset, s->type->size);
 }
 
-// ---------------- Õû¸ö³ÌĞò ----------------
+// ---------------- æ•´ä¸ªç¨‹åº ----------------
 bool CodeGenerator::generate(Node* root)
 {
     errors.clear(); scopes.clear(); saved.clear(); ir = IRProgram();
@@ -66,7 +66,7 @@ bool CodeGenerator::generate(Node* root)
     string progName = root->son[0]->son[1]->son[0]->value;
     pushScope();
     declarePart(root->son[1]);
-    tempBase = tempTop = tempMax = nextOffset;        // Ö÷³ÌĞòµÄÁÙÊ±±äÁ¿·ÅÔÚÈ«¾Ö±äÁ¿ºóÃæ
+    tempBase = tempTop = tempMax = nextOffset;        // ä¸»ç¨‹åºçš„ä¸´æ—¶å˜é‡æ”¾åœ¨å…¨å±€å˜é‡åé¢
     ir.entry = (int)ir.code.size();
     emit("ENTRY", Operand::proc(-1, progName));
     stmList(root->son[2]->son[1]);                    // ProgramBody -> begin StmList end
@@ -76,7 +76,7 @@ bool CodeGenerator::generate(Node* root)
     return errors.empty();
 }
 
-// ---------------- ÉùÃ÷²¿·Ö ----------------
+// ---------------- å£°æ˜éƒ¨åˆ† ----------------
 void CodeGenerator::declarePart(Node* n)          // DeclarePart -> TypeDec VarDec ProcDec
 {
     Node* typeDec = n->son[0]; Node* varDec = n->son[1]; Node* procDec = n->son[2];
@@ -109,8 +109,8 @@ TypeInfo* CodeGenerator::typeName(Node* n)       // TypeName -> BaseType | Struc
     if (c->name == "StructureType")
         return c->son[0]->name == "ArrayType" ? arrayType(c->son[0]) : recType(c->son[0]);
     Symbol* s = lookup(c->value);
-    if (!s) { error(c->line, "ÀàĞÍ " + c->value + " Î´ÉùÃ÷"); return NULL; }
-    if (s->kind != Symbol::TYPE) { error(c->line, c->value + " ²»ÊÇÀàĞÍÃû"); return NULL; }
+    if (!s) { error(c->line, "ç±»å‹ " + c->value + " æœªå£°æ˜"); return NULL; }
+    if (s->kind != Symbol::TYPE) { error(c->line, c->value + " ä¸æ˜¯ç±»å‹å"); return NULL; }
     return s->type;
 }
 TypeInfo* CodeGenerator::baseType(Node* n) { return n->son[0]->name == "integer" ? intType : charType; }
@@ -118,7 +118,7 @@ TypeInfo* CodeGenerator::arrayType(Node* n)       // ArrayType -> array [ Low ..
 {
     int low = atoi(n->son[2]->son[0]->value.c_str());
     int high = atoi(n->son[4]->son[0]->value.c_str());
-    if (high < low) { error(lineOf(n), "Êı×éÉÏ½çĞ¡ÓÚÏÂ½ç"); return NULL; }
+    if (high < low) { error(lineOf(n), "æ•°ç»„ä¸Šç•Œå°äºä¸‹ç•Œ"); return NULL; }
     TypeInfo* t = new TypeInfo(TypeInfo::ARRAY);
     t->low = low; t->high = high; t->elem = baseType(n->son[7]);
     t->size = high - low + 1;
@@ -135,7 +135,7 @@ TypeInfo* CodeGenerator::recType(Node* n)         // RecType -> record FieldDecL
         vector<Node*> ids = idList(f->son[1]);
         for (size_t i = 0; i < ids.size() && ft; i++)
         {
-            if (t->findField(ids[i]->value) >= 0) { error(ids[i]->line, "¼ÇÂ¼µÄÓò " + ids[i]->value + " ÖØ¸´"); continue; }
+            if (t->findField(ids[i]->value) >= 0) { error(ids[i]->line, "è®°å½•çš„åŸŸ " + ids[i]->value + " é‡å¤"); continue; }
             t->fieldNames.push_back(ids[i]->value);
             t->fieldTypes.push_back(ft);
             t->fieldOffsets.push_back(t->size);
@@ -190,7 +190,7 @@ void CodeGenerator::paramDecList(Node* n, Symbol* p)   // ParamDecList -> Param 
             Symbol* s = new Symbol(Symbol::VAR, ids[i]->value);
             s->type = t; s->level = level; s->isVarParam = isVar; s->offset = nextOffset;
             if (!declare(s, ids[i]->line)) continue;
-            nextOffset += isVar ? 1 : t->size;     // var ĞÎ²ÎÖ»Õ¼Ò»¸ö×Ö£¨µØÖ·£©
+            nextOffset += isVar ? 1 : t->size;     // var å½¢å‚åªå ä¸€ä¸ªå­—ï¼ˆåœ°å€ï¼‰
             ParamInfo pi; pi.type = t; pi.isVar = isVar; p->params.push_back(pi);
         }
         Node* more = n->son[1];
@@ -209,14 +209,14 @@ void CodeGenerator::procDeclaration(Node* n)
         p->procIndex = (int)ir.procs.size();
         ProcInfo info; info.name = idNode->value; info.level = p->level; info.entry = 0; info.paramWords = 0; info.frameWords = 0;
         ir.procs.push_back(info);
-        declare(p, idNode->line);                  // ¹ı³ÌÃûÊôÓÚÍâ²ã×÷ÓÃÓò£¬ÏÈµÇ¼Ç£¬¹ı³ÌÌåÀï²ÅÄÜµİ¹éµ÷ÓÃ
+        declare(p, idNode->line);                  // è¿‡ç¨‹åå±äºå¤–å±‚ä½œç”¨åŸŸï¼Œå…ˆç™»è®°ï¼Œè¿‡ç¨‹ä½“é‡Œæ‰èƒ½é€’å½’è°ƒç”¨
 
         saved.push_back(nextOffset); saved.push_back(tempBase); saved.push_back(tempTop); saved.push_back(tempMax);
         level++; pushScope(); nextOffset = 0;
         if (!isEps(n->son[3]->son[0])) paramDecList(n->son[3]->son[0], p);   // ParamList -> ParamDecList
         ir.procs[p->procIndex].paramWords = nextOffset;
-        declarePart(n->son[6]->son[0]);           // ProcDecPart -> DeclarePart£¨º¬Ç¶Ì×¹ı³Ì£©
-        tempBase = tempTop = tempMax = nextOffset; // ÁÙÊ±±äÁ¿·ÅÔÚ¾Ö²¿±äÁ¿ºóÃæ
+        declarePart(n->son[6]->son[0]);           // ProcDecPart -> DeclarePartï¼ˆå«åµŒå¥—è¿‡ç¨‹ï¼‰
+        tempBase = tempTop = tempMax = nextOffset; // ä¸´æ—¶å˜é‡æ”¾åœ¨å±€éƒ¨å˜é‡åé¢
         ir.procs[p->procIndex].entry = (int)ir.code.size();
         emit("PROC", Operand::proc(p->procIndex, p->name));
         stmList(n->son[7]->son[0]->son[1]);        // ProcBody -> ProgramBody -> begin StmList end
@@ -232,19 +232,19 @@ void CodeGenerator::procDeclaration(Node* n)
     }
 }
 
-// ---------------- ±äÁ¿£¨×óÖµ£© ----------------
-LValue CodeGenerator::lvalue(Node* idNode, Node* vm)     // id VariMore£»VariMore -> ¦Å | [ Exp ] | . FieldVar
+// ---------------- å˜é‡ï¼ˆå·¦å€¼ï¼‰ ----------------
+LValue CodeGenerator::lvalue(Node* idNode, Node* vm)     // id VariMoreï¼›VariMore -> Îµ | [ Exp ] | . FieldVar
 {
     LValue lv;
     Symbol* s = lookup(idNode->value);
-    if (!s) { error(idNode->line, "±äÁ¿ " + idNode->value + " Î´ÉùÃ÷"); return lv; }
-    if (s->kind != Symbol::VAR) { error(idNode->line, idNode->value + " ²»ÊÇ±äÁ¿"); return lv; }
+    if (!s) { error(idNode->line, "å˜é‡ " + idNode->value + " æœªå£°æ˜"); return lv; }
+    if (s->kind != Symbol::VAR) { error(idNode->line, idNode->value + " ä¸æ˜¯å˜é‡"); return lv; }
     lv.base = operandOf(s); lv.type = s->type;
     if (!vm || isEps(vm->son[0])) return lv;
     if (vm->son[0]->name == "[") return indexInto(lv, vm->son[1], idNode->line);
     Node* fv = vm->son[1];                        // FieldVar -> id FieldVarMore
     lv = fieldOf(lv, fv->son[0]);
-    Node* fvm = fv->son[1];                       // FieldVarMore -> ¦Å | [ Exp ]
+    Node* fvm = fv->son[1];                       // FieldVarMore -> Îµ | [ Exp ]
     if (!isEps(fvm->son[0])) lv = indexInto(lv, fvm->son[1], fv->son[0]->line);
     return lv;
 }
@@ -253,11 +253,11 @@ LValue CodeGenerator::indexInto(LValue lv, Node* expNode, int line)
     ExpRes i = exp(expNode); checkScalar(i, line);
     Operand iv = rvalue(i);
     if (!lv.type) return lv;
-    if (lv.type->kind != TypeInfo::ARRAY) { error(line, "¶Ô·ÇÊı×é±äÁ¿Ê¹ÓÃÏÂ±ê"); lv.type = NULL; return lv; }
-    Operand off;                                   // Æ«ÒÆ = ÏÂ±ê - ÏÂ½ç
+    if (lv.type->kind != TypeInfo::ARRAY) { error(line, "å¯¹éæ•°ç»„å˜é‡ä½¿ç”¨ä¸‹æ ‡"); lv.type = NULL; return lv; }
+    Operand off;                                   // åç§» = ä¸‹æ ‡ - ä¸‹ç•Œ
     if (iv.kind == Operand::K_CONST) off = Operand::constant(iv.value - lv.type->low);
     else { off = newTemp(); emit("SUB", iv, Operand::constant(lv.type->low), off); }
-    if (lv.hasOff)                                 // ¼ÇÂ¼ÀïµÄÊı×éÓò£ºÔÙ¼ÓÉÏÓòµÄÆ«ÒÆ
+    if (lv.hasOff)                                 // è®°å½•é‡Œçš„æ•°ç»„åŸŸï¼šå†åŠ ä¸ŠåŸŸçš„åç§»
     {
         if (off.kind == Operand::K_CONST && lv.off.kind == Operand::K_CONST) off = Operand::constant(off.value + lv.off.value);
         else { Operand t = newTemp(); emit("ADD", off, lv.off, t); off = t; }
@@ -268,32 +268,32 @@ LValue CodeGenerator::indexInto(LValue lv, Node* expNode, int line)
 LValue CodeGenerator::fieldOf(LValue lv, Node* fid)
 {
     if (!lv.type) return lv;
-    if (lv.type->kind != TypeInfo::RECORD) { error(fid->line, "¶Ô·Ç¼ÇÂ¼±äÁ¿·ÃÎÊÓò " + fid->value); lv.type = NULL; return lv; }
+    if (lv.type->kind != TypeInfo::RECORD) { error(fid->line, "å¯¹éè®°å½•å˜é‡è®¿é—®åŸŸ " + fid->value); lv.type = NULL; return lv; }
     int k = lv.type->findField(fid->value);
-    if (k < 0) { error(fid->line, "¼ÇÂ¼ÖĞÃ»ÓĞÓò " + fid->value); lv.type = NULL; return lv; }
+    if (k < 0) { error(fid->line, "è®°å½•ä¸­æ²¡æœ‰åŸŸ " + fid->value); lv.type = NULL; return lv; }
     lv.off = Operand::constant(lv.type->fieldOffsets[k]); lv.hasOff = true;
     lv.type = lv.type->fieldTypes[k];
     return lv;
 }
-Operand CodeGenerator::rvalue(ExpRes& e)          // °Ñ±í´ïÊ½½á¹û±ä³É¿ÉÖ±½ÓÊ¹ÓÃµÄ²Ù×÷Êı£¨±ØÒªÊ±Éú³ÉÈ¡ÖµÖ¸Áî£©
+Operand CodeGenerator::rvalue(ExpRes& e)          // æŠŠè¡¨è¾¾å¼ç»“æœå˜æˆå¯ç›´æ¥ä½¿ç”¨çš„æ“ä½œæ•°ï¼ˆå¿…è¦æ—¶ç”Ÿæˆå–å€¼æŒ‡ä»¤ï¼‰
 {
-    if (!e.isVar) return e.opnd;                   // ³£Á¿»òÒÑËãºÃµÄÁÙÊ±±äÁ¿
+    if (!e.isVar) return e.opnd;                   // å¸¸é‡æˆ–å·²ç®—å¥½çš„ä¸´æ—¶å˜é‡
     LValue& lv = e.lv;
     if (!lv.type) return Operand::constant(0);
-    if (!lv.hasOff) return lv.base;                // Õû¸ö±äÁ¿
+    if (!lv.hasOff) return lv.base;                // æ•´ä¸ªå˜é‡
     Operand t = newTemp();
     if (lv.type->isScalar()) { emit("LD", lv.base, lv.off, t); return t; }
-    emit("ADDR", lv.base, lv.off, t);              // ¼ÇÂ¼ÀïµÄÊı×éÓòÕûÌå£ºÈ¡µØÖ·£¬Ö®ºó°´ÒıÓÃÊ¹ÓÃ
+    emit("ADDR", lv.base, lv.off, t);              // è®°å½•é‡Œçš„æ•°ç»„åŸŸæ•´ä½“ï¼šå–åœ°å€ï¼Œä¹‹åæŒ‰å¼•ç”¨ä½¿ç”¨
     return Operand::ref(t.name, t.level, t.value, lv.type->size);
 }
 
-// ---------------- ±í´ïÊ½ ----------------
+// ---------------- è¡¨è¾¾å¼ ----------------
 ExpRes CodeGenerator::binary(const string& op, ExpRes& a, ExpRes& b, int line)
 {
     checkScalar(a, line); checkScalar(b, line);
     Operand x = rvalue(a), y = rvalue(b);
     ExpRes r; r.type = intType; r.isVar = false;
-    if (x.kind == Operand::K_CONST && y.kind == Operand::K_CONST && !(op == "DIV" && y.value == 0))   // ³£Á¿ÕÛµş
+    if (x.kind == Operand::K_CONST && y.kind == Operand::K_CONST && !(op == "DIV" && y.value == 0))   // å¸¸é‡æŠ˜å 
     {
         int v = op == "ADD" ? x.value + y.value : op == "SUB" ? x.value - y.value : op == "MUL" ? x.value * y.value : x.value / y.value;
         r.opnd = Operand::constant(v);
@@ -313,7 +313,7 @@ ExpRes CodeGenerator::factor(Node* n)             // Factor -> ( Exp ) | intc | 
     r.type = r.lv.type;
     return r;
 }
-ExpRes CodeGenerator::term(Node* n)               // Term -> Factor OtherFactor£»OtherFactor -> ¦Å | MultOp Term£¬Õ¹Æ½³É×ó½áºÏ
+ExpRes CodeGenerator::term(Node* n)               // Term -> Factor OtherFactorï¼›OtherFactor -> Îµ | MultOp Termï¼Œå±•å¹³æˆå·¦ç»“åˆ
 {
     ExpRes r = factor(n->son[0]);
     Node* other = n->son[1];
@@ -327,7 +327,7 @@ ExpRes CodeGenerator::term(Node* n)               // Term -> Factor OtherFactor£
     }
     return r;
 }
-ExpRes CodeGenerator::exp(Node* n)                // Exp -> Term OtherTerm£»OtherTerm -> ¦Å | AddOp Exp£¬Õ¹Æ½³É×ó½áºÏ
+ExpRes CodeGenerator::exp(Node* n)                // Exp -> Term OtherTermï¼›OtherTerm -> Îµ | AddOp Expï¼Œå±•å¹³æˆå·¦ç»“åˆ
 {
     ExpRes r = term(n->son[0]);
     Node* other = n->son[1];
@@ -341,7 +341,7 @@ ExpRes CodeGenerator::exp(Node* n)                // Exp -> Term OtherTerm£»Othe
     }
     return r;
 }
-Operand CodeGenerator::relExp(Node* n)            // RelExp -> Exp OtherRelE£»OtherRelE -> CmpOp Exp
+Operand CodeGenerator::relExp(Node* n)            // RelExp -> Exp OtherRelEï¼›OtherRelE -> CmpOp Exp
 {
     ExpRes a = exp(n->son[0]); checkScalar(a, lineOf(n));
     string op = n->son[1]->son[0]->son[0]->name == "=" ? "EQ" : "LT";
@@ -351,7 +351,7 @@ Operand CodeGenerator::relExp(Node* n)            // RelExp -> Exp OtherRelE£»Ot
     emit(op, x, y, t);
     return t;
 }
-vector<Node*> CodeGenerator::actParams(Node* n)   // ActParamList -> ¦Å | Exp ActParamMore£»ActParamMore -> ¦Å | , ActParamList
+vector<Node*> CodeGenerator::actParams(Node* n)   // ActParamList -> Îµ | Exp ActParamMoreï¼›ActParamMore -> Îµ | , ActParamList
 {
     vector<Node*> v;
     while (n && !isEps(n->son[0]))
@@ -363,8 +363,8 @@ vector<Node*> CodeGenerator::actParams(Node* n)   // ActParamList -> ¦Å | Exp Ac
     return v;
 }
 
-// ---------------- Óï¾ä ----------------
-void CodeGenerator::stmList(Node* n)              // StmList -> Stm StmMore£»StmMore -> ¦Å | ; StmList
+// ---------------- è¯­å¥ ----------------
+void CodeGenerator::stmList(Node* n)              // StmList -> Stm StmMoreï¼›StmMore -> Îµ | ; StmList
 {
     while (n)
     {
@@ -376,12 +376,12 @@ void CodeGenerator::stmList(Node* n)              // StmList -> Stm StmMore£»Stm
 void CodeGenerator::call(Node* idNode, Node* actList)
 {
     Symbol* p = lookup(idNode->value);
-    if (!p) { error(idNode->line, "¹ı³Ì " + idNode->value + " Î´ÉùÃ÷"); return; }
-    if (p->kind != Symbol::PROC) { error(idNode->line, idNode->value + " ²»ÊÇ¹ı³Ì"); return; }
+    if (!p) { error(idNode->line, "è¿‡ç¨‹ " + idNode->value + " æœªå£°æ˜"); return; }
+    if (p->kind != Symbol::PROC) { error(idNode->line, idNode->value + " ä¸æ˜¯è¿‡ç¨‹"); return; }
     vector<Node*> args = actParams(actList);
     if (args.size() != p->params.size())
     {
-        error(idNode->line, "¹ı³Ì " + idNode->value + " ĞèÒª " + itos((int)p->params.size()) + " ¸ö²ÎÊı£¬Êµ¼Ê¸øÁË " + itos((int)args.size()) + " ¸ö");
+        error(idNode->line, "è¿‡ç¨‹ " + idNode->value + " éœ€è¦ " + itos((int)p->params.size()) + " ä¸ªå‚æ•°ï¼Œå®é™…ç»™äº† " + itos((int)args.size()) + " ä¸ª");
         return;
     }
     for (size_t i = 0; i < args.size(); i++)
@@ -390,15 +390,15 @@ void CodeGenerator::call(Node* idNode, Node* actList)
         TypeInfo* want = p->params[i].type;
         if (p->params[i].isVar)
         {
-            if (!a.isVar) { error(idNode->line, "µÚ " + itos((int)i + 1) + " ¸ö²ÎÊıÊÇ var ²ÎÊı£¬Êµ²Î±ØĞëÊÇ±äÁ¿"); continue; }
+            if (!a.isVar) { error(idNode->line, "ç¬¬ " + itos((int)i + 1) + " ä¸ªå‚æ•°æ˜¯ var å‚æ•°ï¼Œå®å‚å¿…é¡»æ˜¯å˜é‡"); continue; }
             if (a.type && a.type != want && !(a.type->isScalar() && want->isScalar() && a.type->kind == want->kind))
-                error(idNode->line, "µÚ " + itos((int)i + 1) + " ¸öÊµ²ÎµÄÀàĞÍÓë var ĞÎ²Î²»Ò»ÖÂ");
+                error(idNode->line, "ç¬¬ " + itos((int)i + 1) + " ä¸ªå®å‚çš„ç±»å‹ä¸ var å½¢å‚ä¸ä¸€è‡´");
             if (!a.lv.type) continue;
             emit("ARGREF", a.lv.base, a.lv.hasOff ? a.lv.off : Operand::constant(0));
         }
         else
         {
-            if (a.type && !sameType(a.type, want)) error(idNode->line, "µÚ " + itos((int)i + 1) + " ¸öÊµ²ÎµÄÀàĞÍ²»Æ¥Åä");
+            if (a.type && !sameType(a.type, want)) error(idNode->line, "ç¬¬ " + itos((int)i + 1) + " ä¸ªå®å‚çš„ç±»å‹ä¸åŒ¹é…");
             emit("ARG", rvalue(a));
         }
     }
@@ -406,7 +406,7 @@ void CodeGenerator::call(Node* idNode, Node* actList)
 }
 void CodeGenerator::stm(Node* n)
 {
-    tempTop = tempBase;                           // ÁÙÊ±±äÁ¿Ö»ÔÚÒ»ÌõÓï¾äÄÚÓĞĞ§£¬Ã¿ÌõÓï¾äÖØĞÂ´ÓÍ··ÖÅä
+    tempTop = tempBase;                           // ä¸´æ—¶å˜é‡åªåœ¨ä¸€æ¡è¯­å¥å†…æœ‰æ•ˆï¼Œæ¯æ¡è¯­å¥é‡æ–°ä»å¤´åˆ†é…
     Node* c = n->son[0];
     if (c->name == "ConditionalStm")              // if RelExp then StmList else StmList fi
     {
@@ -429,18 +429,18 @@ void CodeGenerator::stm(Node* n)
         emit("JMP", Operand::label(lStart));
         emit("LABEL", Operand::label(lEnd));
     }
-    else if (c->name == "InputStm")               // read ( Invar )£¬Invar -> id
+    else if (c->name == "InputStm")               // read ( Invar )ï¼ŒInvar -> id
     {
         Node* id = c->son[2]->son[0];
         LValue lv = lvalue(id, NULL);
         if (!lv.type) return;
-        if (!lv.type->isScalar()) { error(id->line, "read Ö»ÄÜ¶ÁÈëÕûÊı»ò×Ö·û±äÁ¿"); return; }
+        if (!lv.type->isScalar()) { error(id->line, "read åªèƒ½è¯»å…¥æ•´æ•°æˆ–å­—ç¬¦å˜é‡"); return; }
         emit(lv.type->kind == TypeInfo::CHAR ? "READC" : "READ", Operand(), Operand(), lv.base);
     }
-    else if (c->name == "OutputStm")              // write ( OutputRest£»OutputRest -> Exp ) | string )
+    else if (c->name == "OutputStm")              // write ( OutputRestï¼›OutputRest -> Exp ) | string )
     {
         Node* rest = c->son[2];
-        if (rest->son[0]->name == "string")       // ÓïÑÔÀ©Õ¹£ºÊä³ö×Ö·û´®³£Á¿
+        if (rest->son[0]->name == "string")       // è¯­è¨€æ‰©å±•ï¼šè¾“å‡ºå­—ç¬¦ä¸²å¸¸é‡
         {
             ir.strings.push_back(rest->son[0]->value);
             emit("WRITES", Operand::str((int)ir.strings.size() - 1, rest->son[0]->value));
@@ -448,7 +448,7 @@ void CodeGenerator::stm(Node* n)
         }
         ExpRes e = exp(rest->son[0]);
         if (!e.type) return;
-        if (!e.type->isScalar()) { error(lineOf(c), "write Ö»ÄÜÊä³öÕûÊı»ò×Ö·û"); return; }
+        if (!e.type->isScalar()) { error(lineOf(c), "write åªèƒ½è¾“å‡ºæ•´æ•°æˆ–å­—ç¬¦"); return; }
         emit(e.type->kind == TypeInfo::CHAR ? "WRITEC" : "WRITE", rvalue(e));
     }
     else if (c->name == "ReturnStm")              // return ( Exp )
@@ -458,7 +458,7 @@ void CodeGenerator::stm(Node* n)
         if (level == 0) emit("HALT");
         else emit("RET", rvalue(e));
     }
-    else                                          // id AssCall£»AssCall -> AssignmentRest | CallStmRest
+    else                                          // id AssCallï¼›AssCall -> AssignmentRest | CallStmRest
     {
         Node* ac = n->son[1]->son[0];
         if (ac->name == "AssignmentRest")         // VariMore := Exp
@@ -466,14 +466,14 @@ void CodeGenerator::stm(Node* n)
             LValue lv = lvalue(c, ac->son[0]);
             ExpRes rhs = exp(ac->son[2]);
             if (!lv.type || !rhs.type) return;
-            if (!sameType(lv.type, rhs.type)) { error(c->line, "¸³ÖµÁ½±ßµÄÀàĞÍ²»Æ¥Åä"); return; }
+            if (!sameType(lv.type, rhs.type)) { error(c->line, "èµ‹å€¼ä¸¤è¾¹çš„ç±»å‹ä¸åŒ¹é…"); return; }
             Operand v = rvalue(rhs);
             if (lv.type->isScalar())
             {
                 if (!lv.hasOff) emit("MOV", v, Operand(), lv.base);
                 else emit("ST", v, lv.base, lv.off);
             }
-            else                                  // Êı×é¡¢¼ÇÂ¼ÕûÌå¸³Öµ
+            else                                  // æ•°ç»„ã€è®°å½•æ•´ä½“èµ‹å€¼
             {
                 if (!lv.hasOff) emit("COPY", v, Operand(), lv.base);
                 else

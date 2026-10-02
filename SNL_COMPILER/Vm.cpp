@@ -21,11 +21,11 @@ int Vm::addr(const Operand& o)
     else if (o.kind == Operand::K_REF)
     {
         int slot = display[o.level] + o.value;
-        if (slot < 0 || slot >= (int)mem.size()) throw string("ÄÚ´æµØÖ·Ô½½ç");
-        a = mem[slot];                            // ²ÛÀï´æµÄÊÇÊµ²ÎµÄµØÖ·
+        if (slot < 0 || slot >= (int)mem.size()) throw string("å†…å­˜åœ°å€è¶Šç•Œ");
+        a = mem[slot];                            // æ§½é‡Œå­˜çš„æ˜¯å®å‚çš„åœ°å€
     }
-    else throw string("²Ù×÷Êı²»ÊÇ±äÁ¿");
-    if (a < 0 || a >= (int)mem.size()) throw string("ÄÚ´æµØÖ·Ô½½ç");
+    else throw string("æ“ä½œæ•°ä¸æ˜¯å˜é‡");
+    if (a < 0 || a >= (int)mem.size()) throw string("å†…å­˜åœ°å€è¶Šç•Œ");
     return a;
 }
 int Vm::val(const Operand& o)
@@ -36,7 +36,7 @@ int Vm::val(const Operand& o)
 int Vm::jump(const Operand& label)
 {
     int l = label.value;
-    if (l < 0 || l >= (int)labelPos.size() || labelPos[l] < 0) throw string("Ìø×ªµ½²»´æÔÚµÄ±êºÅ");
+    if (l < 0 || l >= (int)labelPos.size() || labelPos[l] < 0) throw string("è·³è½¬åˆ°ä¸å­˜åœ¨çš„æ ‡å·");
     return labelPos[l];
 }
 
@@ -45,45 +45,45 @@ bool Vm::run()
     try
     {
         sp = ir.globalWords; pc = ir.entry; display[0] = 0;
-        if (sp >= (int)mem.size()) throw string("ÄÚ´æ²»¹»");
+        if (sp >= (int)mem.size()) throw string("å†…å­˜ä¸å¤Ÿ");
         for (;;)
         {
-            if (++steps > maxSteps) throw string("Ö´ĞĞ²½Êı³¬¹ıÉÏÏŞ£¬¿ÉÄÜÊÇËÀÑ­»·");
-            if (pc < 0 || pc >= (int)ir.code.size()) throw string("³ÌĞò¼ÆÊıÆ÷Ô½½ç");
+            if (++steps > maxSteps) throw string("æ‰§è¡Œæ­¥æ•°è¶…è¿‡ä¸Šé™ï¼Œå¯èƒ½æ˜¯æ­»å¾ªç¯");
+            if (pc < 0 || pc >= (int)ir.code.size()) throw string("ç¨‹åºè®¡æ•°å™¨è¶Šç•Œ");
             const Quad& q = ir.code[pc];
             const string& op = q.op;
             pc++;
             if (op == "ADD") mem[addr(q.r)] = val(q.a) + val(q.b);
             else if (op == "SUB") mem[addr(q.r)] = val(q.a) - val(q.b);
             else if (op == "MUL") mem[addr(q.r)] = val(q.a) * val(q.b);
-            else if (op == "DIV") { int d = val(q.b); if (d == 0) throw string("³ıÊıÎªÁã"); mem[addr(q.r)] = val(q.a) / d; }
+            else if (op == "DIV") { int d = val(q.b); if (d == 0) throw string("é™¤æ•°ä¸ºé›¶"); mem[addr(q.r)] = val(q.a) / d; }
             else if (op == "LT") mem[addr(q.r)] = val(q.a) < val(q.b);
             else if (op == "EQ") mem[addr(q.r)] = val(q.a) == val(q.b);
             else if (op == "MOV") mem[addr(q.r)] = val(q.a);
             else if (op == "COPY")
             {
                 int s = addr(q.a), d = addr(q.r), n = q.a.size;
-                if (s + n > (int)mem.size() || d + n > (int)mem.size()) throw string("ÄÚ´æµØÖ·Ô½½ç");
+                if (s + n > (int)mem.size() || d + n > (int)mem.size()) throw string("å†…å­˜åœ°å€è¶Šç•Œ");
                 for (int k = 0; k < n; k++) mem[d + k] = mem[s + k];
             }
             else if (op == "LD")
             {
                 int a = addr(q.a) + val(q.b);
-                if (a < 0 || a >= (int)mem.size()) throw string("ÄÚ´æµØÖ·Ô½½ç");
+                if (a < 0 || a >= (int)mem.size()) throw string("å†…å­˜åœ°å€è¶Šç•Œ");
                 mem[addr(q.r)] = mem[a];
             }
             else if (op == "ST")
             {
                 int a = addr(q.b) + val(q.r);
-                if (a < 0 || a >= (int)mem.size()) throw string("ÄÚ´æµØÖ·Ô½½ç");
+                if (a < 0 || a >= (int)mem.size()) throw string("å†…å­˜åœ°å€è¶Šç•Œ");
                 mem[a] = val(q.a);
             }
             else if (op == "ADDR") mem[addr(q.r)] = addr(q.a) + val(q.b);
             else if (op == "JMP") pc = jump(q.a);
             else if (op == "JF") { if (val(q.a) == 0) pc = jump(q.r); }
             else if (op == "LABEL" || op == "PROC" || op == "ENDP" || op == "ENTRY") {}
-            else if (op == "READ") { int v; if (!io.readInt(v)) throw string("read£ºÃ»ÓĞÊäÈëÁË"); mem[addr(q.r)] = v; }
-            else if (op == "READC") { char ch; if (!io.readChar(ch)) throw string("read£ºÃ»ÓĞÊäÈëÁË"); mem[addr(q.r)] = (unsigned char)ch; }
+            else if (op == "READ") { int v; if (!io.readInt(v)) throw string("readï¼šæ²¡æœ‰è¾“å…¥äº†"); mem[addr(q.r)] = v; }
+            else if (op == "READC") { char ch; if (!io.readChar(ch)) throw string("readï¼šæ²¡æœ‰è¾“å…¥äº†"); mem[addr(q.r)] = (unsigned char)ch; }
             else if (op == "WRITE") { stringstream ss; ss << val(q.a) << "\n"; io.write(ss.str()); }
             else if (op == "WRITEC") { string s(1, (char)val(q.a)); io.write(s + "\n"); }
             else if (op == "WRITES") io.write(ir.strings[q.a.value] + "\n");
@@ -97,8 +97,8 @@ bool Vm::run()
             {
                 const ProcInfo& p = ir.procs[q.a.value];
                 int base = sp;
-                if (base + p.frameWords >= (int)mem.size()) throw string("Õ»Òç³ö£¨µİ¹éÌ«Éî£¿£©");
-                if ((int)args.size() != p.paramWords) throw string("Êµ²ÎÓëĞÎ²ÎµÄ×ÖÊı²»·û");
+                if (base + p.frameWords >= (int)mem.size()) throw string("æ ˆæº¢å‡ºï¼ˆé€’å½’å¤ªæ·±ï¼Ÿï¼‰");
+                if ((int)args.size() != p.paramWords) throw string("å®å‚ä¸å½¢å‚çš„å­—æ•°ä¸ç¬¦");
                 for (int k = 0; k < p.frameWords; k++) mem[base + k] = k < (int)args.size() ? args[k] : 0;
                 Frame f; f.level = p.level; f.savedDisplay = display[p.level]; f.base = base; f.retPc = pc;
                 frames.push_back(f);
@@ -109,14 +109,14 @@ bool Vm::run()
             }
             else if (op == "RET")
             {
-                if (frames.empty()) throw string("²»ÔÚ¹ı³ÌÖĞÖ´ĞĞ RET");
+                if (frames.empty()) throw string("ä¸åœ¨è¿‡ç¨‹ä¸­æ‰§è¡Œ RET");
                 Frame f = frames.back(); frames.pop_back();
                 display[f.level] = f.savedDisplay;
                 sp = f.base;
                 pc = f.retPc;
             }
             else if (op == "HALT") break;
-            else throw string("Î´ÖªµÄËÄÔªÊ½ " + op);
+            else throw string("æœªçŸ¥çš„å››å…ƒå¼ " + op);
         }
     }
     catch (string& e) { error = e; return false; }

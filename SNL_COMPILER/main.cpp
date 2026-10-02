@@ -1,38 +1,38 @@
-#include "header.h"    //È«¾ÖÍ·ÎÄ¼ş
-#include "Grammar.h"    //Óï·¨·ÖÎöÍ·ÎÄ¼ş
-#include "Word.h"       //´Ê·¨·ÖÎöÍ·ÎÄ¼ş
-#include "resource.h"   //×ÊÔ´
-#include "Gen.h"        //ÓïÒå·ÖÎöÓë´úÂëÉú³ÉÍ·ÎÄ¼ş
-#include "Vm.h"         //ÖĞ¼ä´úÂëĞéÄâ»úÍ·ÎÄ¼ş
+#include "header.h"    //å…¨å±€å¤´æ–‡ä»¶
+#include "Grammar.h"    //è¯­æ³•åˆ†æå¤´æ–‡ä»¶
+#include "Word.h"       //è¯æ³•åˆ†æå¤´æ–‡ä»¶
+#include "resource.h"   //èµ„æº
+#include "Gen.h"        //è¯­ä¹‰åˆ†æä¸ä»£ç ç”Ÿæˆå¤´æ–‡ä»¶
+#include "Vm.h"         //ä¸­é—´ä»£ç è™šæ‹Ÿæœºå¤´æ–‡ä»¶
 using namespace std;
 
 #define ID_EDIT     1
 #define BLOCK_HIGH 20
 #define BLOCK_WIDTH 100
 #define LINE 30
-LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);  //Ö÷´°Ìå»Øµ÷º¯Êı
-wordScanner* wordProject;                               //´Ê·¨·ÖÎöÏîÄ¿
-GrammarAnalyzer* grammarProject;                        //Óï·¨·ÖÎöÏîÄ¿
-static TCHAR szAppName[] = TEXT ("snl") ;               //³ÌĞòÃû
+LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);  //ä¸»çª—ä½“å›è°ƒå‡½æ•°
+wordScanner* wordProject;                               //è¯æ³•åˆ†æé¡¹ç›®
+GrammarAnalyzer* grammarProject;                        //è¯­æ³•åˆ†æé¡¹ç›®
+static TCHAR szAppName[] = TEXT ("snl") ;               //ç¨‹åºå
 int maxWidth=0;
-HINSTANCE hInst;                                        //³ÌĞò¾ä±ú
-OPENFILENAME ofn ;                                      //ÎÄ¼şĞÅÏ¢½á¹¹
-HWND hwndEdit ;                                         //×Ó´°¿Ú¾ä±ú
-HWND hDlgChild = NULL ;                                  //×Ó´°¿Ú¾ä±ú
-BOOL CALLBACK WordDlg (HWND, UINT, WPARAM, LPARAM);     //´Ê·¨·ÖÎö×Ó´°¿Ú»Øµ÷º¯Êı
-BOOL CALLBACK GrammarDlg(HWND, UINT, WPARAM, LPARAM);   //Óï·¨·ÖÎö×Ó´°¿Ú»Øµ÷º¯Êı
-BOOL CALLBACK TreeDlg(HWND, UINT, WPARAM, LPARAM);   //Óï·¨Ê÷×Ó´°¿Ú»Øµ÷º¯Êı
-BOOL CALLBACK BuildDlg(HWND, UINT, WPARAM, LPARAM);  //Ò»¼ü±àÒë½á¹û´°¿Ú»Øµ÷º¯Êı
-static string buildText;                                //Ò»¼ü±àÒë½á¹û´°¿ÚÏÔÊ¾µÄÎÄ±¾
+HINSTANCE hInst;                                        //ç¨‹åºå¥æŸ„
+OPENFILENAME ofn ;                                      //æ–‡ä»¶ä¿¡æ¯ç»“æ„
+HWND hwndEdit ;                                         //å­çª—å£å¥æŸ„
+HWND hDlgChild = NULL ;                                  //å­çª—å£å¥æŸ„
+BOOL CALLBACK WordDlg (HWND, UINT, WPARAM, LPARAM);     //è¯æ³•åˆ†æå­çª—å£å›è°ƒå‡½æ•°
+BOOL CALLBACK GrammarDlg(HWND, UINT, WPARAM, LPARAM);   //è¯­æ³•åˆ†æå­çª—å£å›è°ƒå‡½æ•°
+BOOL CALLBACK TreeDlg(HWND, UINT, WPARAM, LPARAM);   //è¯­æ³•æ ‘å­çª—å£å›è°ƒå‡½æ•°
+BOOL CALLBACK BuildDlg(HWND, UINT, WPARAM, LPARAM);  //ä¸€é”®ç¼–è¯‘ç»“æœçª—å£å›è°ƒå‡½æ•°
+static string buildText;                                //ä¸€é”®ç¼–è¯‘ç»“æœçª—å£æ˜¾ç¤ºçš„æ–‡æœ¬
 
-//°Ñ \n »»³É \r\n£¨±à¼­¿òºÍ¶àĞĞÎÄ±¾¿òÖ»ÈÏ \r\n£©
+//æŠŠ \n æ¢æˆ \r\nï¼ˆç¼–è¾‘æ¡†å’Œå¤šè¡Œæ–‡æœ¬æ¡†åªè®¤ \r\nï¼‰
 static string CrLf (const string& s)
 {
      string r ;
      for (size_t i = 0 ; i < s.size () ; i++) { if (s[i] == '\n') r += "\r\n" ; else r += s[i] ; }
      return r ;
 }
-//³ÌĞòÊäÈë¶Ô»°¿ò£ºĞéÄâ»úÖ´ĞĞµ½ read Ê±µ¯³ö
+//ç¨‹åºè¾“å…¥å¯¹è¯æ¡†ï¼šè™šæ‹Ÿæœºæ‰§è¡Œåˆ° read æ—¶å¼¹å‡º
 static string inputText ;
 BOOL CALLBACK InputDlg (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -59,7 +59,7 @@ BOOL CALLBACK InputDlg (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
      }
      return FALSE ;
 }
-//ĞéÄâ»úµÄÊäÈëÊä³ö£ºread µ¯¶Ô»°¿òÒªÊäÈë£¬write µÄÄÚÈİÀÛ»ıµ½×Ö·û´®Àï
+//è™šæ‹Ÿæœºçš„è¾“å…¥è¾“å‡ºï¼šread å¼¹å¯¹è¯æ¡†è¦è¾“å…¥ï¼Œwrite çš„å†…å®¹ç´¯ç§¯åˆ°å­—ç¬¦ä¸²é‡Œ
 struct DialogIO : VmIO
 {
      HWND owner ;
@@ -69,8 +69,8 @@ struct DialogIO : VmIO
      {
           return DialogBoxParam (hInst, MAKEINTRESOURCE (IDC_INPUT_DIALOG), owner, (DLGPROC) InputDlg, (LPARAM) prompt) == IDOK ;
      }
-     bool readInt (int& v) { if (!ask ("³ÌĞòÖ´ĞĞµ½ read£¬ÇëÊäÈëÒ»¸öÕûÊı£º")) return false ; v = atoi (inputText.c_str ()) ; return true ; }
-     bool readChar (char& c) { if (!ask ("³ÌĞòÖ´ĞĞµ½ read£¬ÇëÊäÈëÒ»¸ö×Ö·û£º")) return false ; c = inputText.empty () ? ' ' : inputText[0] ; return true ; }
+     bool readInt (int& v) { if (!ask ("ç¨‹åºæ‰§è¡Œåˆ° readï¼Œè¯·è¾“å…¥ä¸€ä¸ªæ•´æ•°ï¼š")) return false ; v = atoi (inputText.c_str ()) ; return true ; }
+     bool readChar (char& c) { if (!ask ("ç¨‹åºæ‰§è¡Œåˆ° readï¼Œè¯·è¾“å…¥ä¸€ä¸ªå­—ç¬¦ï¼š")) return false ; c = inputText.empty () ? ' ' : inputText[0] ; return true ; }
      void write (const string& s) { out += s ; }
 } ;
 int vScroll=0;
@@ -80,51 +80,51 @@ void dfs(HWND hwnd,Node* node,int depth,int width);
 int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     PSTR szCmdLine, int iCmdShow)
 {
-     HACCEL   hAccel ;      //¼ÓËÙ¼ü×ÊÔ´¾ä±ú
-     HWND     hwnd ;        //Ö÷´°¿Ú¾ä±ú
-     MSG      msg ;         //ÏûÏ¢
-     WNDCLASS wndclass ;    //´°¿ÚÀà
-	 HMENU    hMenu;        //²Ëµ¥¾ä±ú
-	 hInst=hInstance;       //³ÌĞò¾ä±ú¸³Öµ
-     wndclass.style         = CS_HREDRAW | CS_VREDRAW ; //Éè¶¨´°¿Ú·ç¸ñ
-     wndclass.lpfnWndProc   = WndProc ;  //Éè¶¨»Øµ÷º¯Êı
+     HACCEL   hAccel ;      //åŠ é€Ÿé”®èµ„æºå¥æŸ„
+     HWND     hwnd ;        //ä¸»çª—å£å¥æŸ„
+     MSG      msg ;         //æ¶ˆæ¯
+     WNDCLASS wndclass ;    //çª—å£ç±»
+	 HMENU    hMenu;        //èœå•å¥æŸ„
+	 hInst=hInstance;       //ç¨‹åºå¥æŸ„èµ‹å€¼
+     wndclass.style         = CS_HREDRAW | CS_VREDRAW ; //è®¾å®šçª—å£é£æ ¼
+     wndclass.lpfnWndProc   = WndProc ;  //è®¾å®šå›è°ƒå‡½æ•°
      wndclass.cbClsExtra    = 0 ;
      wndclass.cbWndExtra    = 0 ;
-     wndclass.hInstance     = hInstance ;  //³ÌĞò¾ä±ú
-     wndclass.hIcon         = (HICON)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)) ; //¼ÓÔØÍ¼±ê
-     wndclass.hCursor       = LoadCursor(NULL, IDC_ARROW) ; //¼ÓÔØ¹â±ê
-     wndclass.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH) ; //»ñÈ¡Ë¢×Ó
-     wndclass.lpszMenuName  = szAppName ;  //²Ëµ¥Ãû
-     wndclass.lpszClassName = szAppName ;  //´°¿ÚÀàÃû
+     wndclass.hInstance     = hInstance ;  //ç¨‹åºå¥æŸ„
+     wndclass.hIcon         = (HICON)LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)) ; //åŠ è½½å›¾æ ‡
+     wndclass.hCursor       = LoadCursor(NULL, IDC_ARROW) ; //åŠ è½½å…‰æ ‡
+     wndclass.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH) ; //è·å–åˆ·å­
+     wndclass.lpszMenuName  = szAppName ;  //èœå•å
+     wndclass.lpszClassName = szAppName ;  //çª—å£ç±»å
 
-     if (!RegisterClass (&wndclass))  //´°¿ÚÀàÊÇ·ñ×¢²á³É¹¦
+     if (!RegisterClass (&wndclass))  //çª—å£ç±»æ˜¯å¦æ³¨å†ŒæˆåŠŸ
      {
           MessageBox (NULL, TEXT ("This program requires Windows NT!"),
                       szAppName, MB_ICONERROR) ;
           return 0 ;
      }
-     hMenu = LoadMenu(hInstance,MAKEINTRESOURCE(IDR_MENU1)) ; //¼ÓÔØ²Ëµ¥
+     hMenu = LoadMenu(hInstance,MAKEINTRESOURCE(IDR_MENU1)) ; //åŠ è½½èœå•
      hwnd = CreateWindow (szAppName, szAppName,
                           WS_OVERLAPPEDWINDOW,
                           GetSystemMetrics (SM_CXSCREEN) / 4,
                           GetSystemMetrics (SM_CYSCREEN) / 4,
                           GetSystemMetrics (SM_CXSCREEN) / 2,
                           GetSystemMetrics (SM_CYSCREEN) / 2,
-                          NULL, hMenu, hInstance, NULL) ;  //´´½¨´°¿Ú
+                          NULL, hMenu, hInstance, NULL) ;  //åˆ›å»ºçª—å£
 
-     ShowWindow (hwnd, iCmdShow) ; //ÉèÖÃÏÔÊ¾×´Ì¬
-     UpdateWindow (hwnd) ;         //»æÖÆ´°¿Ú
+     ShowWindow (hwnd, iCmdShow) ; //è®¾ç½®æ˜¾ç¤ºçŠ¶æ€
+     UpdateWindow (hwnd) ;         //ç»˜åˆ¶çª—å£
 
-     hAccel = LoadAccelerators (hInstance, szAppName) ;  //¼ÓËÙ¼ü×ÊÔ´¼ÓÔØ
+     hAccel = LoadAccelerators (hInstance, szAppName) ;  //åŠ é€Ÿé”®èµ„æºåŠ è½½
 
-     while (GetMessage (&msg, NULL, 0, 0))  //»ñÈ¡ÏûÏ¢
+     while (GetMessage (&msg, NULL, 0, 0))  //è·å–æ¶ˆæ¯
      {
-         /*µÚÒ»¸öÅĞ¶Ï,Èç¹û´Ê·¨·ÖÎöµÄ´°¿ÚÎ´´ò¿ª£¬Óï·¨·ÖÎöºÍÓï·¨Ê÷µÄ´°¿ÚÒ²Îª´ò¿ª
-           µÚ¶ş¸öÅĞ¶Ï,¼ìÑéÊÇ·ñÓĞÒ»¸ö×Ó´°¿Ú´ò¿ª£¬²¢ÇÒÊÇËüµÄÏûÏ¢*/
+         /*ç¬¬ä¸€ä¸ªåˆ¤æ–­,å¦‚æœè¯æ³•åˆ†æçš„çª—å£æœªæ‰“å¼€ï¼Œè¯­æ³•åˆ†æå’Œè¯­æ³•æ ‘çš„çª—å£ä¹Ÿä¸ºæ‰“å¼€
+           ç¬¬äºŒä¸ªåˆ¤æ–­,æ£€éªŒæ˜¯å¦æœ‰ä¸€ä¸ªå­çª—å£æ‰“å¼€ï¼Œå¹¶ä¸”æ˜¯å®ƒçš„æ¶ˆæ¯*/
 
           if (hDlgChild == 0||!IsDialogMessage(hDlgChild, &msg))
 		 {
-             if (!TranslateAccelerator (hwnd, hAccel, &msg)) //·­Òë¼ÓËÙ¼üÎ»Îª¿ÉÊ¶±ğµÄÏûÏ¢
+             if (!TranslateAccelerator (hwnd, hAccel, &msg)) //ç¿»è¯‘åŠ é€Ÿé”®ä½ä¸ºå¯è¯†åˆ«çš„æ¶ˆæ¯
 			 {
                 TranslateMessage (&msg) ;
                 DispatchMessage (&msg) ;
@@ -134,18 +134,18 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
      return msg.wParam ;
 }
 
-int toNum(string str)  //stringÀàĞÍ×ªintĞÍ
+int toNum(string str)  //stringç±»å‹è½¬intå‹
 {
-    int s=str.size();  //»ñÈ¡stringµÄ³¤¶È
+    int s=str.size();  //è·å–stringçš„é•¿åº¦
     int i,num=0;
     for(i=0;i<s;i++)
     {
-        num=num*10+(str[s-i-1]-'0'); //ÏÈµÃµ½µÍµÄÒ»Î»£¬ºó³Ë10,ĞÎ³ÉĞÂµÄµÍÎ»
+        num=num*10+(str[s-i-1]-'0'); //å…ˆå¾—åˆ°ä½çš„ä¸€ä½ï¼Œåä¹˜10,å½¢æˆæ–°çš„ä½ä½
     }
     return num;
 }
 
-bool isNum(string str)  //ÅĞ¶ÏÒ»¸östringÊÇ·ñ¿ÉÒÔ×ªÎªÊı×Ö
+bool isNum(string str)  //åˆ¤æ–­ä¸€ä¸ªstringæ˜¯å¦å¯ä»¥è½¬ä¸ºæ•°å­—
 {
     int i,s;
     s=str.size();
@@ -156,14 +156,14 @@ bool isNum(string str)  //ÅĞ¶ÏÒ»¸östringÊÇ·ñ¿ÉÒÔ×ªÎªÊı×Ö
     }
     return true;
 }
-//Éú³ÉÑ¯ÎÊ´°¿Ú
+//ç”Ÿæˆè¯¢é—®çª—å£
 AskConfirmation (HWND hwnd)
 {
-     return MessageBox (hwnd, TEXT ("ÊÇ·ñÏëÒªÍÆ³ö±àÒëÆ÷?"),
+     return MessageBox (hwnd, TEXT ("æ˜¯å¦æƒ³è¦æ¨å‡ºç¼–è¯‘å™¨?"),
                         szAppName, MB_YESNO | MB_ICONQUESTION) ;
 }
 
-//¸ü¸Ä³ÌĞòµÄ±êÌâ
+//æ›´æ”¹ç¨‹åºçš„æ ‡é¢˜
 void DoCaption (HWND hwnd, TCHAR * szTitleName)
 {
      TCHAR szCaption[64 + MAX_PATH] ;
@@ -174,7 +174,7 @@ void DoCaption (HWND hwnd, TCHAR * szTitleName)
      SetWindowText (hwnd, szCaption) ;
 }
 
-//ÎÄ¼şĞÅÏ¢½á¹¹µÄ³õÊ¼»¯
+//æ–‡ä»¶ä¿¡æ¯ç»“æ„çš„åˆå§‹åŒ–
 void PopFileInitialize (HWND hwnd)
 {
      static TCHAR szFilter[] = TEXT ("Text Files (*.TXT)\0*.txt\0")  \
@@ -203,7 +203,7 @@ void PopFileInitialize (HWND hwnd)
      ofn.lpTemplateName    = NULL ;
 }
 
-//´ò¿ªÒ»¸öÎÄ¼ş
+//æ‰“å¼€ä¸€ä¸ªæ–‡ä»¶
 BOOL PopFileOpenDlg (HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName)
 {
      ofn.hwndOwner         = hwnd ;
@@ -214,7 +214,7 @@ BOOL PopFileOpenDlg (HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName)
      return GetOpenFileName(&ofn) ;
 }
 
-//ok´°¿ÚµÄº¯Êı
+//okçª—å£çš„å‡½æ•°
 void OkMessage (HWND hwnd, TCHAR * szMessage, TCHAR * szTitleName)
 {
      TCHAR szBuffer[64 + MAX_PATH] ;
@@ -224,7 +224,7 @@ void OkMessage (HWND hwnd, TCHAR * szMessage, TCHAR * szTitleName)
      MessageBox (hwnd, szBuffer, szAppName, MB_OK | MB_ICONEXCLAMATION) ;
 }
 
-//°Ñµ¥¶ÀµÄ \n ²¹³É \r\n£¬·ñÔò Mac / Linux ÉÏĞ´µÄÎÄ¼şÔÚ±à¼­¿òÀï²»·ÖĞĞ
+//æŠŠå•ç‹¬çš„ \n è¡¥æˆ \r\nï¼Œå¦åˆ™ Mac / Linux ä¸Šå†™çš„æ–‡ä»¶åœ¨ç¼–è¾‘æ¡†é‡Œä¸åˆ†è¡Œ
 static unsigned char* ExpandNewlines (unsigned char* text)
 {
      int n = 0, i, j ;
@@ -240,7 +240,7 @@ static unsigned char* ExpandNewlines (unsigned char* text)
      free (text) ;
      return out ;
 }
-//¶ÁÈ¡Ò»¸öÎÄ¼ş²¢ÏÔÊ¾
+//è¯»å–ä¸€ä¸ªæ–‡ä»¶å¹¶æ˜¾ç¤º
 BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
 {
      BYTE   bySwap ;
@@ -296,7 +296,7 @@ BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
      else
      {
           pText = pBuffer ;
-          //Ìø¹ı UTF-8 BOM
+          //è·³è¿‡ UTF-8 BOM
           if (iFileLength >= 3 && pText[0] == 0xEF && pText[1] == 0xBB && pText[2] == 0xBF)
           {
                pText += 3 ;
@@ -310,7 +310,7 @@ BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
                                iFileLength + 1) ;
 
 #else
-          //Ô´ÎÄ¼şÈôÊÇ UTF-8 ±àÂë£¨ÀıÈçÔÚ Mac / Linux ÉÏĞ´µÄ£©£¬ÏÈ×ª³Éµ±Ç°´úÂëÒ³£¬±à¼­¿òÀïµÄÖĞÎÄ²Å²»»áÂÒÂë
+          //æºæ–‡ä»¶è‹¥æ˜¯ UTF-8 ç¼–ç ï¼ˆä¾‹å¦‚åœ¨ Mac / Linux ä¸Šå†™çš„ï¼‰ï¼Œå…ˆè½¬æˆå½“å‰ä»£ç é¡µï¼Œç¼–è¾‘æ¡†é‡Œçš„ä¸­æ–‡æ‰ä¸ä¼šä¹±ç 
           BOOL bHigh = FALSE ;
           for (i = 0 ; i < iFileLength ; i++) if (pText[i] >= 0x80) { bHigh = TRUE ; break ; }
           int wlen = bHigh ? MultiByteToWideChar (CP_UTF8, MB_ERR_INVALID_CHARS, (LPCSTR) pText, iFileLength, NULL, 0) : 0 ;
@@ -387,7 +387,7 @@ BOOL PopFileWrite (HWND hwndEdit, PTSTR pstrFileName)
 
 void DrawBorder(HDC hdc, int x, int y, int Width, int Height, int BorderWidth, int WTop)
 {
-	//WTopÎªTRUEÊ±TopÑ¡°×±Ê£¬bottomÎªºÚ±Ê
+	//WTopä¸ºTRUEæ—¶Topé€‰ç™½ç¬”ï¼Œbottomä¸ºé»‘ç¬”
 
 	int i;
 	HPEN  hpen;
@@ -396,7 +396,7 @@ void DrawBorder(HDC hdc, int x, int y, int Width, int Height, int BorderWidth, i
 		SelectObject(hdc,GetStockObject(WHITE_PEN));
 	else
 		SelectObject(hdc,hpen);
-	//»­top,left±ß
+	//ç”»top,leftè¾¹
 	for (i=0; i<BorderWidth; i++)
 	{
 		MoveToEx(hdc,x+i, y+i,NULL);
@@ -410,7 +410,7 @@ void DrawBorder(HDC hdc, int x, int y, int Width, int Height, int BorderWidth, i
 	else
 		SelectObject(hdc,GetStockObject(WHITE_PEN));
 
-	//»­bottom,right±ß
+	//ç”»bottom,rightè¾¹
 	for (i=0; i<BorderWidth; i++)
 	{
 		MoveToEx(hdc,x+Width-i, y+Height-i,NULL);
@@ -421,13 +421,13 @@ void DrawBorder(HDC hdc, int x, int y, int Width, int Height, int BorderWidth, i
 
 	DeleteObject(hpen);
 }
-//Ö÷´°¿Ú»Øµ÷º¯Êı
+//ä¸»çª—å£å›è°ƒå‡½æ•°
 LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 
      int         iSelect, iEnable ;
      static TCHAR     szFileName[MAX_PATH], szTitleName[MAX_PATH] ;
-     static string fileName=""; //ÎÄ¼şÃû¼ÇÂ¼
+     static string fileName=""; //æ–‡ä»¶åè®°å½•
      switch (message)
      {
      case WM_CREATE:
@@ -436,19 +436,19 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                               WS_BORDER | ES_LEFT | ES_MULTILINE |
                               ES_AUTOHSCROLL | ES_AUTOVSCROLL,
                               0, 0, 0, 0, hwnd, (HMENU) ID_EDIT,
-                              ((LPCREATESTRUCT) lParam)->hInstance, NULL) ; //´´½¨ÊäÈëÓÃµÄ×Ó´°¿Ú
-		  PopFileInitialize (hwnd) ;  //ÎÄ¼şĞÅÏ¢½á¹¹µÄ³õÊ¼»¯
+                              ((LPCREATESTRUCT) lParam)->hInstance, NULL) ; //åˆ›å»ºè¾“å…¥ç”¨çš„å­çª—å£
+		  PopFileInitialize (hwnd) ;  //æ–‡ä»¶ä¿¡æ¯ç»“æ„çš„åˆå§‹åŒ–
           return 0 ;
 
-     case WM_SETFOCUS:   //µ±¹â±ê¹Ø×¢Õâ¸ö´°¿Ú
+     case WM_SETFOCUS:   //å½“å…‰æ ‡å…³æ³¨è¿™ä¸ªçª—å£
           SetFocus (hwndEdit) ;
           return 0 ;
 
-     case WM_SIZE:  //µ±¸Ä±äÕâ¸ö´°¿ÚµÄ´óĞ¡
+     case WM_SIZE:  //å½“æ”¹å˜è¿™ä¸ªçª—å£çš„å¤§å°
           MoveWindow(hwndEdit, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE) ;
           return 0 ;
 
-     case WM_INITMENUPOPUP:  //²Ëµ¥À¸µÄ×´Ì¬×ª»»
+     case WM_INITMENUPOPUP:  //èœå•æ çš„çŠ¶æ€è½¬æ¢
           if (lParam == 1)
           {
 			   if (!hDlgChild)
@@ -469,119 +469,119 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
           }
           break ;
 
-	 case WM_COMMAND: //ÊÕµ½µÄ²Ëµ¥µÄÏûÏ¢
+	 case WM_COMMAND: //æ”¶åˆ°çš„èœå•çš„æ¶ˆæ¯
 		 switch(LOWORD(wParam))
           {
 			 case IDC_OPEN:
 
-                //³¢ÊÔ´ò¿ªÎÄ¼ş
+                //å°è¯•æ‰“å¼€æ–‡ä»¶
                 if (PopFileOpenDlg (hwnd, szFileName, szTitleName))
                 {
                     if (!PopFileRead (hwndEdit, szFileName))
                     {
-                         OkMessage (hwnd, TEXT ("ÎŞ·¨´ò¿ªÎÄ¼ş%s!"),
+                         OkMessage (hwnd, TEXT ("æ— æ³•æ‰“å¼€æ–‡ä»¶%s!"),
                                     szTitleName) ;
                          szFileName[0]  = '\0' ;
                          szTitleName[0] = '\0' ;
                     }
                 }
-                //ÉèÖÃ±êÌâ
+                //è®¾ç½®æ ‡é¢˜
                 DoCaption (hwnd, szTitleName) ;
                 return 0 ;
 
              case IDC_WORD:
-                //Ñ¡Ôñ´Ê·¨·ÖÎö
+                //é€‰æ‹©è¯æ³•åˆ†æ
                 if(szFileName[0]=='\0')
                 {
-                    MessageBox(hwnd,"Çë´ò¿ªÎÄ¼ş","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"è¯·æ‰“å¼€æ–‡ä»¶","æé†’",MB_OK);
                     return 0;
                 }
                 fileName=szFileName;
-                //´Ê·¨·ÖÎö¿ªÊ¼i
+                //è¯æ³•åˆ†æå¼€å§‹i
                 wordProject = new wordScanner(szFileName,hwnd);
                 //wordProject = new wordScanner(szFileName,hwnd);
                 wordProject->start();
-                //Éú³É´Ê·¨·ÖÎö´°¿Ú
+                //ç”Ÿæˆè¯æ³•åˆ†æçª—å£
                 hDlgChild = CreateDialog(hInst,MAKEINTRESOURCE(IDC_WORD_DIALOG),hwnd, WordDlg);
                 ShowWindow(hDlgChild,SW_SHOW);
 
                 return 0;
 
              case IDC_GRAMMAR:
-                 //´Ê·¨·ÖÎöÊÇ·ñÊµÏÖ´íÎó
+                 //è¯æ³•åˆ†ææ˜¯å¦å®ç°é”™è¯¯
                 if(wordErrorState==true)
                 {
-                    MessageBox(hwnd,"´Ê·¨´íÎó","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"è¯æ³•é”™è¯¯","æé†’",MB_OK);
                     return 0;
                 }
-                //ÊÇ·ñÒÑ¾­½øĞĞ´Ê·¨·ÖÎö
+                //æ˜¯å¦å·²ç»è¿›è¡Œè¯æ³•åˆ†æ
                 if(fileName=="")
                 {
-                    MessageBox(hwnd,"ÏÈ½øĞĞ´Ê·¨·ÖÎö","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"å…ˆè¿›è¡Œè¯æ³•åˆ†æ","æé†’",MB_OK);
                     return 0;
                 }
-                //¿ªÊ¼Óï·¨·ÖÎö
+                //å¼€å§‹è¯­æ³•åˆ†æ
                 grammarProject = new GrammarAnalyzer(fileName.c_str(),hwnd);
                 //grammarProject = new GrammarAnalyzer(fileName.c_str(),hwnd);
                 grammarProject->start();
 
-                //´´½¨Óï·¨·ÖÎö´°¿Ú
+                //åˆ›å»ºè¯­æ³•åˆ†æçª—å£
 
 
                 hDlgChild = CreateDialog(hInst,MAKEINTRESOURCE(IDC_GRAMMAR_DIALOG),hwnd,GrammarDlg);
                 ShowWindow(hDlgChild,SW_SHOW);
                 return 0;
              case IDC_AUTHOR:
-                 //ÏÔÊ¾¿ª·¢ÈËÔ±ĞÅÏ¢
-                MessageBox(hwnd," 21172602 Â¬çû\n 21172603 Áõè¬»Û\n 21172617 ÕÅÖÇ³¬","¿ª·¢ÈËÔ±",MB_OK);
+                 //æ˜¾ç¤ºå¼€å‘äººå‘˜ä¿¡æ¯
+                MessageBox(hwnd," 21172602 å¢ç¨\n 21172603 åˆ˜ç’æ…§\n 21172617 å¼ æ™ºè¶…","å¼€å‘äººå‘˜",MB_OK);
                     return 0;
              case IDC_SAVE:
                if (szFileName[0])
                {
-                    if (PopFileWrite (hwndEdit, szFileName)&&MessageBox(hwnd,"È·¶¨Òª±£´æÂğ",szFileName,MB_YESNO)==IDYES)
+                    if (PopFileWrite (hwndEdit, szFileName)&&MessageBox(hwnd,"ç¡®å®šè¦ä¿å­˜å—",szFileName,MB_YESNO)==IDYES)
                          return 1 ;
                     else
                     {
-                         OkMessage (hwnd, TEXT ("²»¿ÉĞ´ÎÄ¼ş %s"),
+                         OkMessage (hwnd, TEXT ("ä¸å¯å†™æ–‡ä»¶ %s"),
                                     szTitleName) ;
                          return 0 ;
                     }
                }
                else
                {
-                   MessageBox(hwnd,"»¹Î´´ò¿ªÎÄ¼ş",NULL,MB_OK);
+                   MessageBox(hwnd,"è¿˜æœªæ‰“å¼€æ–‡ä»¶",NULL,MB_OK);
                }
                return 0;
 
              case IDC_TREE:
                  if(wordErrorState==true)
                 {
-                    MessageBox(hwnd,"´Ê·¨´íÎó","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"è¯æ³•é”™è¯¯","æé†’",MB_OK);
                     return 0;
                 }
-                //ÊÇ·ñÒÑ¾­½øĞĞ´Ê·¨·ÖÎö
+                //æ˜¯å¦å·²ç»è¿›è¡Œè¯æ³•åˆ†æ
                 if(fileName=="")
                 {
-                    MessageBox(hwnd,"ÏÈ½øĞĞ´Ê·¨·ÖÎö","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"å…ˆè¿›è¡Œè¯æ³•åˆ†æ","æé†’",MB_OK);
                     return 0;
                 }
-                //¿ªÊ¼Óï·¨·ÖÎö
+                //å¼€å§‹è¯­æ³•åˆ†æ
                 grammarProject = new GrammarAnalyzer(fileName.c_str(),hwnd);
                 //grammarProject = new GrammarAnalyzer(fileName.c_str(),hwnd);
                 grammarProject->start();
                 if(grammarErrorState==true)
                 {
-                    MessageBox(hwnd,"Óï·¨·ÖÎöÓĞ´í","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"è¯­æ³•åˆ†ææœ‰é”™","æé†’",MB_OK);
                     return 0;
                 }
                 hDlgChild = CreateDialog(hInst,MAKEINTRESOURCE(IDC_TREE_DIALOG),hwnd,TreeDlg);
                 ShowWindow(hDlgChild,SW_SHOW);
                 return 0;
              case IDC_BUILD:
-                //Ò»¼ü±àÒë£º´Ê·¨·ÖÎö -> Óï·¨·ÖÎö -> ÓïÒå·ÖÎö²¢Éú³ÉÖĞ¼ä´úÂë -> ÔÚĞéÄâ»úÉÏÖ±½ÓÔËĞĞ
+                //ä¸€é”®ç¼–è¯‘ï¼šè¯æ³•åˆ†æ -> è¯­æ³•åˆ†æ -> è¯­ä¹‰åˆ†æå¹¶ç”Ÿæˆä¸­é—´ä»£ç  -> åœ¨è™šæ‹Ÿæœºä¸Šç›´æ¥è¿è¡Œ
                 if(szFileName[0]=='\0')
                 {
-                    MessageBox(hwnd,"Çë´ò¿ªÎÄ¼ş","ÌáĞÑ",MB_OK);
+                    MessageBox(hwnd,"è¯·æ‰“å¼€æ–‡ä»¶","æé†’",MB_OK);
                     return 0;
                 }
                 {
@@ -590,7 +590,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     ws->start();
                     if(wordErrorState)
                     {
-                        report="´Ê·¨´íÎó£º\r\n";
+                        report="è¯æ³•é”™è¯¯ï¼š\r\n";
                         for(unsigned i=0;i<ws->error.size();i++) report+=ws->error[i]+"\r\n";
                         delete ws;
                     }
@@ -602,17 +602,17 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                         ga->start();
                         if(grammarErrorState)
                         {
-                            report="Óï·¨´íÎó£º\r\n";
+                            report="è¯­æ³•é”™è¯¯ï¼š\r\n";
                             for(unsigned i=0;i<ga->itemList.size();i++)
                                 if(ga->itemList[i].oper=="error")
-                                    report+="µÚ"+ga->itemList[i].right+"ĞĞ£ºµ¥´Ê "+ga->itemList[i].left+" ¸½½üÓĞÓï·¨´íÎó\r\n";
+                                    report+="ç¬¬"+ga->itemList[i].right+"è¡Œï¼šå•è¯ "+ga->itemList[i].left+" é™„è¿‘æœ‰è¯­æ³•é”™è¯¯\r\n";
                         }
                         else
                         {
                             CodeGenerator gen;
                             if(!gen.generate(ga->root))
                             {
-                                report="ÓïÒå´íÎó£º\r\n";
+                                report="è¯­ä¹‰é”™è¯¯ï¼š\r\n";
                                 for(unsigned i=0;i<gen.errors.size();i++) report+=gen.errors[i]+"\r\n";
                             }
                             else
@@ -627,9 +627,9 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 DialogIO io(hwnd);
                                 Vm vm(gen.ir,io);
                                 bool ok=vm.run();
-                                report="ÒÑÉú³ÉÖĞ¼ä´úÂë£º"+irPath+"\r\n\r\n==== ³ÌĞòÊä³ö ====\r\n"+CrLf(io.out);
-                                if(!ok) report+="ÔËĞĞ´íÎó£º"+vm.error+"\r\n";
-                                report+="\r\n==== ÖĞ¼ä´úÂë£¨ËÄÔªÊ½£© ====\r\n"+CrLf(listing);
+                                report="å·²ç”Ÿæˆä¸­é—´ä»£ç ï¼š"+irPath+"\r\n\r\n==== ç¨‹åºè¾“å‡º ====\r\n"+CrLf(io.out);
+                                if(!ok) report+="è¿è¡Œé”™è¯¯ï¼š"+vm.error+"\r\n";
+                                report+="\r\n==== ä¸­é—´ä»£ç ï¼ˆå››å…ƒå¼ï¼‰ ====\r\n"+CrLf(listing);
                             }
                         }
                         delete ga;
@@ -642,20 +642,20 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		 }
 		 break;
      case WM_CLOSE:
-         //¹Ø±Õ´°¿Ú
+         //å…³é—­çª—å£
           if (IDYES == AskConfirmation (hwnd))
                DestroyWindow (hwnd) ;
           return 0 ;
 
      case WM_QUERYENDSESSION:
-         //ÏµÍ³¹Ø±Õ
+         //ç³»ç»Ÿå…³é—­
           if (IDYES == AskConfirmation (hwnd))
                return 1 ;
           else
                return 0 ;
 
      case WM_DESTROY:
-         //×¢Ïú³ÌĞò
+         //æ³¨é”€ç¨‹åº
           PostQuitMessage (0) ;
           return 0 ;
      }
@@ -667,8 +667,8 @@ BOOL CALLBACK WordDlg (HWND hwnd, UINT message,
 {
 
 	 RECT      rect;
-   	 PAINTSTRUCT ps; //»æÍ¼ĞÅÏ¢½á¹¹
-	 HDC hdc;       //Ó²¼şÏÔÊ¾¾ä±ú
+   	 PAINTSTRUCT ps; //ç»˜å›¾ä¿¡æ¯ç»“æ„
+	 HDC hdc;       //ç¡¬ä»¶æ˜¾ç¤ºå¥æŸ„
 	 string str;
 	 TEXTMETRIC  tm ;
 	 TCHAR       szBuffer[10] ;
@@ -679,18 +679,18 @@ BOOL CALLBACK WordDlg (HWND hwnd, UINT message,
      case WM_PAINT:
 
           hdc = GetDC (hwnd) ;
-          //ÉèÖÃ×Ö·û¸ñÊ½
+          //è®¾ç½®å­—ç¬¦æ ¼å¼
           GetTextMetrics(hdc,&tm) ;
           cxChar = tm.tmAveCharWidth ;
           cxCaps = (tm.tmPitchAndFamily & 1 ? 3 : 2) * cxChar / 2 ;
           cyChar = tm.tmHeight + tm.tmExternalLeading ;
 
           ReleaseDC (hwnd, hdc) ;
-          //ÉèÖÃ¹ö¶¯Ìõ
+          //è®¾ç½®æ»šåŠ¨æ¡
           SetScrollRange (hwnd, SB_VERT, 0, wordProject->tokenList.num - 1, FALSE) ;
           SetScrollPos   (hwnd, SB_VERT, iVscrollPos, TRUE) ;
 
-          //ÊÇ·ñÓï·¨·ÖÎö´íÎó
+          //æ˜¯å¦è¯­æ³•åˆ†æé”™è¯¯
           if(!wordErrorState)
           {
               hdc = BeginPaint (hwnd, &ps) ;
@@ -719,7 +719,7 @@ BOOL CALLBACK WordDlg (HWND hwnd, UINT message,
           }
           else
           {
-              //´íÎóÔò´Ó´íÎóĞòÁĞÀï´òÓ¡´íÎóĞÅÏ¢
+              //é”™è¯¯åˆ™ä»é”™è¯¯åºåˆ—é‡Œæ‰“å°é”™è¯¯ä¿¡æ¯
               hdc = BeginPaint (hwnd, &ps) ;
               int i,y;
               for (i = 0 ; i < wordProject->error.size() ; i++)
@@ -735,7 +735,7 @@ BOOL CALLBACK WordDlg (HWND hwnd, UINT message,
           return TRUE ;
 
      case WM_VSCROLL:
-        //¹ö¶¯ÌõµÄ²Ù×÷
+        //æ»šåŠ¨æ¡çš„æ“ä½œ
           switch (LOWORD(wParam))
           {
           case SB_LINEUP:
@@ -789,7 +789,7 @@ BOOL CALLBACK WordDlg (HWND hwnd, UINT message,
      return FALSE ;
 }
 
-//Óï·¨·ÖÎö×Ó´°¿Ú»Øµ÷º¯Êı
+//è¯­æ³•åˆ†æå­çª—å£å›è°ƒå‡½æ•°
 BOOL CALLBACK GrammarDlg (HWND hwnd, UINT message,
                            WPARAM wParam, LPARAM lParam)
 {
@@ -916,7 +916,7 @@ void dfs(HWND hwnd,Node* node,int depth,int width)
 	hpen=CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
 	hdc=GetDC(hwnd);
 	//cout<<node->name<<endl;
-    if(fatherNode->son[0]==node)    //ÏòÏÂ×ß
+    if(fatherNode->son[0]==node)    //å‘ä¸‹èµ°
     {
         SetWindowOrgEx(hdc,(BLOCK_WIDTH+LINE)*hScroll,(BLOCK_HIGH+LINE)*(vScroll),NULL);
         DrawBorder(hdc,(BLOCK_WIDTH+LINE)*depth,(BLOCK_HIGH+LINE)*width,BLOCK_WIDTH,BLOCK_HIGH,1,1);
@@ -935,7 +935,7 @@ void dfs(HWND hwnd,Node* node,int depth,int width)
         dfs(hwnd,tempSonNode,depth+1,width);
     }
 
-    while(fatherNode->curSon <= high)  //È¡ÏÂÒ»¸öĞÖµÜ½Úµã
+    while(fatherNode->curSon <= high)  //å–ä¸‹ä¸€ä¸ªå…„å¼ŸèŠ‚ç‚¹
     {
         //cout<<"error"<<endl;
         hdc=GetDC(hwnd);
@@ -978,13 +978,13 @@ BOOL CALLBACK TreeDlg (HWND hwnd, UINT message,
      {
      case WM_PAINT:
           hdc=GetDC(hwnd);
-          SetWindowOrgEx(hdc,(BLOCK_WIDTH+LINE)*hVscrollPos,(BLOCK_HIGH+LINE)*(iVscrollPos),NULL);   //ÉèÖÃ×ø±ê
+          SetWindowOrgEx(hdc,(BLOCK_WIDTH+LINE)*hVscrollPos,(BLOCK_HIGH+LINE)*(iVscrollPos),NULL);   //è®¾ç½®åæ ‡
           vScroll=iVscrollPos;
           hScroll=hVscrollPos;
           a=root->getSon();
           //cout<<depth<<endl;
           //cout<<"draw tree start"<<endl;
-          DrawBorder(hdc,0,0,BLOCK_WIDTH,BLOCK_HIGH,1,1);  //»æÖÆ³õÊ¼½Úµã
+          DrawBorder(hdc,0,0,BLOCK_WIDTH,BLOCK_HIGH,1,1);  //ç»˜åˆ¶åˆå§‹èŠ‚ç‚¹
           Grid.left=0;
           Grid.right=BLOCK_WIDTH;
           Grid.top=0;
@@ -992,10 +992,10 @@ BOOL CALLBACK TreeDlg (HWND hwnd, UINT message,
           SetBkMode(hdc, TRANSPARENT);
           DrawText(hdc,(a->name).c_str(),-1,&Grid,DT_SINGLELINE|DT_CENTER|DT_VCENTER);
 
-          dfs(hwnd,a,1,0);  //µİ¹é¿ªÊ¼
+          dfs(hwnd,a,1,0);  //é€’å½’å¼€å§‹
           for(i=0;i<grammarProject->nodeList.size();i++)
               grammarProject->nodeList[i]->curSon=0;
-          root=grammarProject->root;   //ÖØĞÂ³õÊ¼»¯
+          root=grammarProject->root;   //é‡æ–°åˆå§‹åŒ–
           constMaxWidth=maxWidth;
           SetScrollRange (hwnd, SB_VERT, 0, maxWidth - 1, FALSE) ;
           SetScrollPos   (hwnd, SB_VERT, iVscrollPos, TRUE) ;
@@ -1080,7 +1080,7 @@ BOOL CALLBACK TreeDlg (HWND hwnd, UINT message,
      return FALSE ;
 }
 
-//Ò»¼ü±àÒë½á¹û´°¿Ú£ºÒ»¸öÖ»¶ÁµÄ¶àĞĞ±à¼­¿ò£¬ÏÔÊ¾Éú³ÉµÄ C ³ÌĞò»ò´íÎóÁĞ±í
+//ä¸€é”®ç¼–è¯‘ç»“æœçª—å£ï¼šä¸€ä¸ªåªè¯»çš„å¤šè¡Œç¼–è¾‘æ¡†ï¼Œæ˜¾ç¤ºç”Ÿæˆçš„ C ç¨‹åºæˆ–é”™è¯¯åˆ—è¡¨
 BOOL CALLBACK BuildDlg (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
      switch (message)
