@@ -33,6 +33,9 @@ intermediate code is executed on the built-in virtual machine (`read` from stdin
 produces `tests/<name>.expected`; `tests/e*.txt` must be rejected.
 The sources stay GBK + CRLF; the Makefile converts copies to UTF-8 before compiling.
 
+One extension to standard SNL: `write("text")` prints a string constant, so a hello world is
+`program hello begin write("hello world") end.` (see `cli/tests/t11_hello.txt`).
+
 In the Windows GUI the same pipeline is behind the menu item 编译 → 一键编译: lexical, syntax and
 semantic analysis in one click, then the program runs on the virtual machine (a dialog asks for
 input on `read`); the window shows the program output and the intermediate code, which is also

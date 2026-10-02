@@ -178,6 +178,38 @@ bool wordScanner::isNotes()
 	return false;
 }
 
+bool wordScanner::isString()
+{
+	Token* token;
+	char ch=getChar();
+    while(ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')
+        ch=getChar();
+	if(ch!='"')
+	{
+		undoChar();
+		return false;
+	}
+	//字符串常量 "..."：不支持转义，不能跨行
+	int line=curLine;
+	ch=getChar();
+	while(!file.eof()&&ch!='"'&&ch!='\n')
+	{
+		tempString+=ch;
+		ch=getChar();
+	}
+	if(ch!='"')
+	{
+		error.push_back("程序第"+lineStr(line)+"行有错误单词： \""+tempString);
+		wordErrorState=true;
+		tempString="";
+		return false;
+	}
+	token=new Token(tempString,"string",line);
+	tokenList.push(*token);
+	tempString="";
+	return true;
+}
+
 int wordScanner::isArray()
 {
 	Token* token;
@@ -338,6 +370,7 @@ void wordScanner::start()
 		else if(ans=isSingleBoundary()){}
 		else if(ans=isDoubleBoundary()){}
 		else if(ans=isNotes()){}
+		else if(ans=isString()){}
 		else if(ans=isArray()){if(ans==2) break;}
 		else
 		{

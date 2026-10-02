@@ -86,6 +86,7 @@ bool Vm::run()
             else if (op == "READC") { char ch; if (!io.readChar(ch)) throw string("read：没有输入了"); mem[addr(q.r)] = (unsigned char)ch; }
             else if (op == "WRITE") { stringstream ss; ss << val(q.a) << "\n"; io.write(ss.str()); }
             else if (op == "WRITEC") { string s(1, (char)val(q.a)); io.write(s + "\n"); }
+            else if (op == "WRITES") io.write(ir.strings[q.a.value] + "\n");
             else if (op == "ARG")
             {
                 if (q.a.kind == Operand::K_CONST) args.push_back(q.a.value);

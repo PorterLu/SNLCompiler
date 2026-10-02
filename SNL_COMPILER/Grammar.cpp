@@ -4,18 +4,18 @@
 using namespace std;
 bool wordErrorState=false;
 bool grammarErrorState=false;
-string unUltimateSign[67]={"Program","ProgramHead","ProgramName","DeclarePart","TypeDec","TypeDeclaration","TypeDecList","TypeDecMore","TypeId","TypeName",
+string unUltimateSign[68]={"Program","ProgramHead","ProgramName","DeclarePart","TypeDec","TypeDeclaration","TypeDecList","TypeDecMore","TypeId","TypeName",
                     "BaseType","StructureType","ArrayType","Low","Top","RecType","FieldDecList","FieldDecMore","IdList","IdMore",
                     "VarDec","VarDeclaration","VarDecList","VarDecMore","VarIdList","VarIdMore","ProcDec","ProcDeclaration","ProcDecMore","ProcName",
                     "ParamList","ParamDecList","ParamMore","Param","FormList","FidMore","ProcDecPart","ProcBody","ProgramBody","StmList",
                     "StmMore","Stm","AssCall","AssignmentRest","ConditionalStm","LoopStm","InputStm","Invar","OutputStm","ReturnStm",
                     "CallStmRest","ActParamList","ActParamMore","RelExp","OtherRelE","Exp","OtherTerm","Term","OtherFactor","Factor",
-                    "Variable", "VariMore", "FieldVar","FieldVarMore","CmpOp","AddOp","MultOp"};
+                    "Variable", "VariMore", "FieldVar","FieldVarMore","CmpOp","AddOp","MultOp","OutputRest"};
 
-string ultimateWord[40]={"program","procedure","type","var","if","then","else","fi","while","do",
+string ultimateWord[41]={"program","procedure","type","var","if","then","else","fi","while","do",
                         "endwh","begin","end","read","write","array","of","record","return","integer",
                         "char","character","intc","id",",",";","<","=","+","-",
-                        "*","(",")","[","]","/",".",":=","@",".."};
+                        "*","(",")","[","]","/",".",":=","@","..","string"};
 
 string toString(int num)
 {
@@ -41,12 +41,12 @@ string toString(int num)
 int GrammarAnalyzer::position(string str)
 {
     int i;
-    for(i=0;i<67;i++)
+    for(i=0;i<68;i++)
         if(str==unUltimateSign[i])
             return i;
-    for(i=0;i<40;i++)
+    for(i=0;i<41;i++)
         if(str==ultimateWord[i])
-            return i+67;
+            return i+68;
     return -1;
 }
 
@@ -344,8 +344,7 @@ void GrammarAnalyzer::initProduction()
     production[73].left=48;
     production[73].right.push_back("write");
     production[73].right.push_back("(");
-    production[73].right.push_back("Exp");
-    production[73].right.push_back(")");
+    production[73].right.push_back("OutputRest");
 
     production[74].left=49;
     production[74].right.push_back("return");
@@ -460,9 +459,19 @@ void GrammarAnalyzer::initProduction()
 
     production[103].left=66;
     production[103].right.push_back("/");
+
+    //语言扩展：write 可以直接输出字符串常量
+    production[104].left=67;
+    production[104].right.push_back("Exp");
+    production[104].right.push_back(")");
+
+    production[105].left=67;
+    production[105].right.push_back("string");
+    production[105].right.push_back(")");
 }
 
 void GrammarAnalyzer::initTable(){
+    llTable[67][31]=104; llTable[67][22]=104; llTable[67][23]=104; llTable[67][40]=105;   //OutputRest
     llTable[0][0]=0;
     llTable[1][0]=1;
     llTable[2][23]=2;
@@ -743,17 +752,22 @@ void GrammarAnalyzer::readToken() //读取token，并做一定的处理 ，方便语法分析
     string str;
     str=fileName.substr(0, fileName.length() - 3)+"token";
     file=fopen(str.c_str(),"r");
-
-    char tempString1[100],tempString2[100];
+    if(file==NULL) return;
+    char line[1024];
     string str1,str2;
     Token* tempToken;
-
-    while(!feof(file))
+    //每行的格式是 "单词 类型 行号"，字符串常量的单词本身可以含空格，所以从行尾往前拆
+    while(fgets(line,sizeof(line),file))
     {
-        int i,line;
-        fscanf(file,"%s %s %d\n",tempString1,tempString2,&line);
-        str1=tempString1;
-        str2=tempString2;
+        string s=line;
+        while(!s.empty()&&(s[s.size()-1]=='\n'||s[s.size()-1]=='\r')) s.erase(s.size()-1);
+        size_t p2=s.rfind(' ');
+        if(p2==string::npos) continue;
+        size_t p1=s.rfind(' ',p2-1);
+        if(p1==string::npos) continue;
+        int lineNo=atoi(s.substr(p2+1).c_str());
+        str2=s.substr(p1+1,p2-p1-1);
+        str1=s.substr(0,p1);
         if(str2=="reservedWord")
             str2=str1;
         else if(str2=="integer")
@@ -762,7 +776,7 @@ void GrammarAnalyzer::readToken() //读取token，并做一定的处理 ，方便语法分析
             str2="character";
         else if(str2=="singleBoundary"||str2=="doubleBoundary"||str2=="arrayBound")
             str2=str1;
-        tempToken = new Token(str1,str2,line);
+        tempToken = new Token(str1,str2,lineNo);
         tokenList.push(*tempToken);
     }
     fclose(file);
@@ -770,13 +784,13 @@ void GrammarAnalyzer::readToken() //读取token，并做一定的处理 ，方便语法分析
 void GrammarAnalyzer::initUUsign()
 {
     int i;
-    for(i=0;i<107;i++)
+    for(i=0;i<109;i++)
     {
-        if(i<=66)
+        if(i<=67)
             UUsignArray[i].left=unUltimateSign[i];
         else
         {
-            UUsignArray[i].left=ultimateWord[i-67];
+            UUsignArray[i].left=ultimateWord[i-68];
             UUsignArray[i].isUU=false;
         }
 
@@ -804,10 +818,10 @@ void GrammarAnalyzer::start()
            tempOperation = new Item();
            topItem=analyzeStack.top();
            int tempNum=position(topItem.left);
-           if(tempNum<=66)
+           if(tempNum<=67)
            {
                analyzeStack.pop();
-               if(llTable[tempNum][position(token.type)-67]<0)
+               if(llTable[tempNum][position(token.type)-68]<0)
                {
                     error();
                     grammarErrorState=true;
@@ -815,7 +829,7 @@ void GrammarAnalyzer::start()
                }
                tempOperation->left=topItem.left;
                tempOperation->oper="替换";
-               tempProduction=production[llTable[tempNum][position(token.type)-67]];
+               tempProduction=production[llTable[tempNum][position(token.type)-68]];
                str="";
                for(i=tempProduction.right.size()-1;i>=0;i--)
                {
@@ -842,7 +856,7 @@ void GrammarAnalyzer::start()
                     maxDepth=depth;
                //cout<<endl;
            }
-           else if(tempNum>66&&topItem.left==token.type)
+           else if(tempNum>67&&topItem.left==token.type)
            {
                analyzeStack.pop();
                tempOperation->left=token.name;
@@ -871,7 +885,7 @@ void GrammarAnalyzer::start()
                     depth++;
                }
            }
-           else if(tempNum==105)
+           else if(tempNum==106)
            {
                tempOperation->left="ε";
                tempOperation->oper="匹配";

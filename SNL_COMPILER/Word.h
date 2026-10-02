@@ -62,6 +62,7 @@ struct wordScanner
 	bool isSingleBoundary();
 	bool isDoubleBoundary();
 	bool isNotes();
+	bool isString();   //字符串常量 "..."（语言扩展，给 write 用）
 	int isArray();
 	void start();
 	void printResult();

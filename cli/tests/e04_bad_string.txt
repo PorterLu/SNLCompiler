@@ -1,0 +1,4 @@
+program badstr
+begin
+   write("no closing quote)
+end.

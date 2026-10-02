@@ -437,9 +437,16 @@ void CodeGenerator::stm(Node* n)
         if (!lv.type->isScalar()) { error(id->line, "read 只能读入整数或字符变量"); return; }
         emit(lv.type->kind == TypeInfo::CHAR ? "READC" : "READ", Operand(), Operand(), lv.base);
     }
-    else if (c->name == "OutputStm")              // write ( Exp )
+    else if (c->name == "OutputStm")              // write ( OutputRest；OutputRest -> Exp ) | string )
     {
-        ExpRes e = exp(c->son[2]);
+        Node* rest = c->son[2];
+        if (rest->son[0]->name == "string")       // 语言扩展：输出字符串常量
+        {
+            ir.strings.push_back(rest->son[0]->value);
+            emit("WRITES", Operand::str((int)ir.strings.size() - 1, rest->son[0]->value));
+            return;
+        }
+        ExpRes e = exp(rest->son[0]);
         if (!e.type) return;
         if (!e.type->isScalar()) { error(lineOf(c), "write 只能输出整数或字符"); return; }
         emit(e.type->kind == TypeInfo::CHAR ? "WRITEC" : "WRITE", rvalue(e));

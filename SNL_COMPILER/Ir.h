@@ -11,7 +11,7 @@ using namespace std;
 
 struct Operand
 {
-    enum Kind { K_NONE, K_CONST, K_VAR, K_REF, K_LABEL, K_PROC };   // 加前缀是为了避开 windows.h 里的 CONST 宏
+    enum Kind { K_NONE, K_CONST, K_VAR, K_REF, K_LABEL, K_PROC, K_STR };   // 加前缀是为了避开 windows.h 里的 CONST 宏
     Kind kind;
     int value;      // CONST：常量值；VAR / REF：在活动记录里的字偏移；LABEL：标号；PROC：过程编号
     int level;      // VAR / REF：所在层次，0 是主程序
@@ -23,6 +23,7 @@ struct Operand
     static Operand ref(const string& n, int lv, int off, int sz) { Operand o; o.kind = K_REF; o.name = n; o.level = lv; o.value = off; o.size = sz; return o; }
     static Operand label(int n) { Operand o; o.kind = K_LABEL; o.value = n; return o; }
     static Operand proc(int n, const string& nm) { Operand o; o.kind = K_PROC; o.value = n; o.name = nm; return o; }
+    static Operand str(int n, const string& text) { Operand o; o.kind = K_STR; o.value = n; o.name = text; return o; }
     string str(int curLevel) const
     {
         stringstream ss;
@@ -32,6 +33,7 @@ struct Operand
         case K_CONST: ss << "#" << value; return ss.str();
         case K_LABEL: ss << "L" << value; return ss.str();
         case K_PROC:  return name;
+        case K_STR:   return "\"" + name + "\"";
         default:
             ss << name;
             if (level != 0 && level != curLevel) ss << "@" << level;   // 外层过程的变量
@@ -55,6 +57,7 @@ struct IRProgram
 {
     vector<Quad> code;
     vector<ProcInfo> procs;
+    vector<string> strings;   // 字符串常量表，WRITES 的操作数是下标
     int globalWords;    // 主程序的变量和临时变量占的字数
     int entry;          // 主程序第一条四元式的下标
     IRProgram() : globalWords(0), entry(0) {}
@@ -66,6 +69,7 @@ struct IRProgram
     //   ADDR base,off,r         r := base 的地址 + off（之后 r 作为 REF 使用）
     //   LABEL L / JMP L / JF a,-,L（a 为 0 时跳转）
     //   READ/READC -,-,r        读入整数 / 字符      WRITE/WRITEC a  输出整数 / 字符并换行
+    //   WRITES a                输出字符串常量并换行（a 是字符串表下标）
     //   ARG a（按值传递，整块压栈） / ARGREF base,off（var 参数，压地址） / CALL p / RET [a]
     //   PROC p ... ENDP p       过程体的范围         ENTRY / HALT  主程序的开始与结束
     string listing() const
