@@ -1,3 +1,5 @@
+![SNL Compiler](docs/banner.png)
+
 ## SNL Compiler
 
 This is an SNL language compiler written by our group. It runs lexical, syntax, and semantic
@@ -38,7 +40,7 @@ begin
 end.
 ```
 
-Open it in the GUI and choose 编译 → 一键编译 (one-click compile). The window below shows the program
+Open it in the GUI and choose Compile → Compile and run. The window below shows the program
 output `hello world` and the quadruples, which the compiler also saves to `<source>.ir`. You can
 also pass the file on the command line, and the GUI compiles and runs it on launch.
 
@@ -60,7 +62,7 @@ and a dialog asks for each value.
 # Wine: the Homebrew wine casks are disabled; install the WineHQ build from
 # https://github.com/Gcenx/macOS_Wine_builds/releases  (unpack, move "Wine Stable.app" to /Applications)
 export PATH="/Applications/Wine Stable.app/Contents/Resources/wine/bin:$PATH"
-sh cli/wine-cjk-fonts.sh                     # once per Wine prefix, otherwise Chinese text shows as boxes
+sh cli/wine-cjk-fonts.sh                     # optional: once per prefix, helps render the ε symbol
 brew install mingw-w64 && make -C cli win    # rebuild the GUI exe from the current sources
 LANG=zh_CN.UTF-8 wine cli/build/win/SNL_COMPILER.exe
 ```
