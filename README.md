@@ -46,16 +46,20 @@ begin
 end.
 ```
 
+Open it in the GUI and choose 编译 → 一键编译 (one-click compile). The window below shows the
+result: the program output `hello world` and the quadruples generated from the syntax tree.
+You can also pass the file on the command line and it is compiled and run on launch.
+
+![hello world in the GUI](docs/hello_world.png)
+
+The same program on the command line:
+
 ```sh
 cd cli && make
 ./build/snl_cli tests/t11_hello.txt --run
 ```
 
-![hello world demo](docs/hello_world.png)
-
-The compiler scans, parses and type-checks the program, generates the quadruples shown above,
-then the virtual machine runs them and prints `hello world`. An addition program that reads two
-numbers and writes their sum is in `cli/tests/t12_add.txt`.
+An addition program that reads two numbers and writes their sum is in `cli/tests/t12_add.txt`.
 
 In the Windows GUI the same pipeline is behind the menu item 编译 → 一键编译: lexical, syntax and
 semantic analysis in one click, then the program runs on the virtual machine (a dialog asks for
