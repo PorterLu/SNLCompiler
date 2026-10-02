@@ -10,6 +10,7 @@ using namespace std;
 #define BLOCK_HIGH 20
 #define BLOCK_WIDTH 100
 #define LINE 30
+#define WM_LOADFILE (WM_APP + 1)   // load and compile a file named on the command line
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);  //main window callback
 wordScanner* wordProject;                               //lexical analysis instance
 GrammarAnalyzer* grammarProject;                        //syntax analysis instance
@@ -116,6 +117,18 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
      UpdateWindow (hwnd) ;         //paint the window
 
      hAccel = LoadAccelerators (hInstance, szAppName) ;  //load the accelerator table
+
+     // open and compile a file given on the command line: wine SNL_COMPILER.exe <file>
+     if (szCmdLine && szCmdLine[0])
+     {
+          static char cmdFile[MAX_PATH] ;
+          char* p = szCmdLine ;
+          while (*p == ' ' || *p == '"') p++ ;
+          lstrcpyn (cmdFile, p, MAX_PATH) ;
+          int clen = lstrlen (cmdFile) ;
+          while (clen > 0 && (cmdFile[clen-1] == ' ' || cmdFile[clen-1] == '"')) cmdFile[--clen] = '\0' ;
+          if (cmdFile[0]) SendMessage (hwnd, WM_LOADFILE, 0, (LPARAM) cmdFile) ;
+     }
 
      while (GetMessage (&msg, NULL, 0, 0))  //get a message
      {
@@ -446,6 +459,20 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
      case WM_SIZE:  //when this window is resized
           MoveWindow(hwndEdit, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE) ;
+          return 0 ;
+
+     case WM_LOADFILE:  //load the command-line file, then run one-click compile
+          lstrcpyn (szFileName, (PTSTR) lParam, MAX_PATH) ;
+          lstrcpyn (szTitleName, (PTSTR) lParam, MAX_PATH) ;
+          if (!PopFileRead (hwndEdit, szFileName))
+          {
+               szFileName[0] = '\0' ; szTitleName[0] = '\0' ;
+          }
+          else
+          {
+               DoCaption (hwnd, szTitleName) ;
+               PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_BUILD, 0), 0) ;
+          }
           return 0 ;
 
      case WM_INITMENUPOPUP:  //update the menu bar state
@@ -1087,7 +1114,9 @@ BOOL CALLBACK BuildDlg (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
      {
      case WM_INITDIALOG:
           SetDlgItemText (hwnd, IDC_BUILD_EDIT, (LPCSTR) lParam) ;
-          return TRUE ;
+          SetFocus (GetDlgItem (hwnd, IDC_BUILD_EDIT)) ;
+          SendDlgItemMessage (hwnd, IDC_BUILD_EDIT, EM_SETSEL, (WPARAM) -1, 0) ;  //clear the initial select-all
+          return FALSE ;
      case WM_SIZE:
           MoveWindow (GetDlgItem (hwnd, IDC_BUILD_EDIT), 0, 0, LOWORD (lParam), HIWORD (lParam), TRUE) ;
           return TRUE ;
