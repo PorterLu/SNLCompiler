@@ -34,7 +34,7 @@ struct wordScanner
 		tempString="";
 		this->fileName=fileName;
 
-		file.open(fileName); //打开文件，后期如果有UI设计一定不是这么打开的
+		file.open(fileName, ios::in|ios::binary); //打开文件，后期如果有UI设计一定不是这么打开的
 	}
 
 	wordScanner()
@@ -59,38 +59,33 @@ struct wordScanner
 	void printResult();
 	void createTokenFile();
 
-	char getChar()//文件末尾需要一个#为记号
+	char getChar()//读取 offset 处的字符并后移。若前一个字符是 '\n'，说明刚跨过一个换行，行号加一
 	{
-		char ch1,ch2,ch;
-
-		if(offset>=3)
-        {
-            file.seekg(offset-1);
-            ch1=file.get();
-            file.seekg(offset-2);
-            ch2=file.get();
-            if(ch1=='\n'&&ch2=='\n')
-                curLine++;
-        }
+		char ch;
+		if(offset>=1)
+		{
+			file.clear();
+			file.seekg(offset-1);
+			if(file.get()=='\n')
+				curLine++;
+		}
+		file.clear();      //读到文件尾后流会置 eof/fail 位，不清掉的话后面的 seekg 全部失效
 		file.seekg(offset);
 		ch=file.get();
 		offset++;
 		return ch;
 	}
 
-	void undoChar()//文件末尾需要一个#为记号
+	void undoChar()//回退一个字符。若被回退的字符前面是 '\n'，则撤销刚才的行号加一
 	{
-		char ch1,ch2,ch;
-		if(offset>=3)
-        {
-            file.seekg(offset-2);
-            ch1=file.get();
-            file.seekg(offset-3);
-            ch2=file.get();
-            if(ch1== '\n'&&ch2=='\n')
-                curLine--;
-        }
-        offset--;
+		if(offset>=2)
+		{
+			file.clear();
+			file.seekg(offset-2);
+			if(file.get()=='\n')
+				curLine--;
+		}
+		offset--;
 	}
 
 	bool isNumber(char ch)

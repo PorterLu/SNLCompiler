@@ -5,12 +5,12 @@ using namespace std;
 bool wordErrorState=false;
 bool grammarErrorState=false;
 string unUltimateSign[67]={"Program","ProgramHead","ProgramName","DeclarePart","TypeDec","TypeDeclaration","TypeDecList","TypeDecMore","TypeId","TypeName",
-                    "BaseType","StructureType","ArrayType","Low","Top","RecType","FieldDecList","FieldDecMore","ldList","ldMore",
+                    "BaseType","StructureType","ArrayType","Low","Top","RecType","FieldDecList","FieldDecMore","IdList","IdMore",
                     "VarDec","VarDeclaration","VarDecList","VarDecMore","VarIdList","VarIdMore","ProcDec","ProcDeclaration","ProcDecMore","ProcName",
                     "ParamList","ParamDecList","ParamMore","Param","FormList","FidMore","ProcDecPart","ProcBody","ProgramBody","StmList",
                     "StmMore","Stm","AssCall","AssignmentRest","ConditionalStm","LoopStm","InputStm","Invar","OutputStm","ReturnStm",
                     "CallStmRest","ActParamList","ActParamMore","RelExp","OtherRelE","Exp","OtherTerm","Term","OtherFactor","Factor",
-                    "Variable", "VariMore", "FieldVar","FieldVarMore","CmpOp","AddOp","Multop"};
+                    "Variable", "VariMore", "FieldVar","FieldVarMore","CmpOp","AddOp","MultOp"};
 
 string ultimateWord[40]={"program","procedure","type","var","if","then","else","fi","while","do",
                         "endwh","begin","end","read","write","array","of","record","return","integer",
@@ -34,7 +34,6 @@ string toString(int num)
         times--;
 
     }
-    cout<<num<<endl;
     str+=num+0x30;
     return str;
 }
@@ -216,6 +215,7 @@ void GrammarAnalyzer::initProduction()
     production[40].pushRight(";");
     production[40].pushRight("ProcDecPart");
     production[40].pushRight("ProcBody");
+    production[40].pushRight("ProcDecMore");
 
 
     production[41].left=28;
@@ -251,7 +251,7 @@ void GrammarAnalyzer::initProduction()
     production[50].left=33;
     production[50].right.push_back("var");
     production[50].right.push_back("TypeName");
-    production[50].right.push_back("FormlList");
+    production[50].right.push_back("FormList");
 
     production[51].left=34;
     production[51].right.push_back("id");
@@ -336,7 +336,7 @@ void GrammarAnalyzer::initProduction()
     production[71].right.push_back("read");
     production[71].right.push_back("(");
     production[71].right.push_back("Invar");
-    production[71].right.push_back("Invar");
+    production[71].right.push_back(")");
 
     production[72].left=47;
     production[72].right.push_back("id");
@@ -455,14 +455,11 @@ void GrammarAnalyzer::initProduction()
     production[101].left=65;
     production[101].right.push_back("-");
 
-    production[102].left=65;
-    production[102].right.push_back("+");
+    production[102].left=66;
+    production[102].right.push_back("*");
 
     production[103].left=66;
-    production[103].right.push_back("*");
-
-    production[104].left=66;
-    production[104].right.push_back("/");
+    production[103].right.push_back("/");
 }
 
 void GrammarAnalyzer::initTable(){
@@ -943,11 +940,13 @@ void GrammarAnalyzer::printTree(Node* root){
             while(temp->son.size()==0){
                 temp=temp->father;
                 n--;
-                while(temp->curSon>temp->son.size()-1){
+                while(temp->father!=NULL&&temp->curSon>temp->son.size()-1){ //到根节点就停，否则解引用空指针
                     temp=temp->father;
                     n--;
                 }
             }
         }
     }
+    for(int i=0;i<nodeList.size();i++) //遍历改动了 curSon，复位以便再次遍历
+        nodeList[i]->curSon=0;
 }

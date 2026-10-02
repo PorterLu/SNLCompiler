@@ -2,11 +2,20 @@
 #include<iostream>
 #include<stdlib.h>
 #include<stdio.h>
+#include<sstream>
 using namespace std;
+
+static string lineStr(int line) //行号转字符串（原来用 curLine+0x30 拼接，只能表示 0~9）
+{
+	stringstream ss;
+	ss<<line;
+	return ss.str();
+}
 bool wordScanner::isChar()
 {
 	Token* token;
 	char ch;
+	bool isError=false; //本次识别是否出错。原来直接拿全局 wordErrorState 做分支，前面一旦出过错，后面所有合法的字符常量都会被误判
 	ch=getChar();
     while(ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')
         ch=getChar();
@@ -15,7 +24,7 @@ bool wordScanner::isChar()
         undoChar();
 		return false;
     }
-	ch=getChar();          //读’后的第一个字符
+	ch=getChar();          //读'后的第一个字符
     if(isNumber(ch)||isLetter(ch))
 	{
         tempString+=ch;
@@ -25,16 +34,15 @@ bool wordScanner::isChar()
 	{
         tempString='\'';
         undoChar();
-		wordErrorState=true;
+		isError=true;
     }
 
-	if(!wordErrorState)
+	if(!isError)
 	{
 		if(ch=='\'')
 		{
 			token=new Token(tempString,"char",curLine);
 			tokenList.push(*token);
-			//cout<<tempString<<endl;
 			tempString="";
 			return true;
 		}
@@ -43,22 +51,15 @@ bool wordScanner::isChar()
 			tempString='\'';
 			undoChar();         //  回退两次，解决出现类似 '12 这种形式
 			undoChar();
-			wordErrorState=true;
+			isError=true;
 		}
     }
 
-	if(wordErrorState==true)
-	{
-	     string str;
-	     str="程序第";
-	     str+=curLine+0x30;
-	     str+="行有错误单词： ";
-	     str+=tempString;
-	     tempString="";
-	     error.push_back(str);
-		 //cout<<tempString<<endl;
-         return false;
-    }
+	string str="程序第"+lineStr(curLine)+"行有错误单词： "+tempString;
+	tempString="";
+	error.push_back(str);
+	wordErrorState=true;
+	return false;
 }
 
 bool wordScanner::isInteger()
@@ -133,7 +134,7 @@ bool wordScanner::isDoubleBoundary()
     else
 	{
         undoChar();
-        str="程序第"+curLine<+"行有错误单词： "+tempString;
+        str="程序第"+lineStr(curLine)+"行有错误单词： "+tempString;
 		error.push_back(str);
 		wordErrorState=true;
 		tempString="";
@@ -161,7 +162,7 @@ bool wordScanner::isNotes()
 	{
 		 string str;
 	     str="程序第";
-	     str+=curLine+0x30;
+	     str+=lineStr(curLine);
 	     str+="行有错误单词： ";
 	     str+=tempString;
 	     tempString="";
@@ -174,6 +175,7 @@ bool wordScanner::isNotes()
 		tempString="";
 		return true;
 	}
+	return false;
 }
 
 int wordScanner::isArray()
@@ -193,13 +195,25 @@ int wordScanner::isArray()
         tempString+=ch;
 		token=new Token(tempString,"arrayBound",curLine);
 		tokenList.push(*token);
-		//cout<<tempString<<endl;
 		tempString="";
         return true;
     }
-    else{            //程序结束,直接返回一个点为一个词
+    else{
         undoChar();     //回退文件字符指针一位
-        return 2;
+        //单独一个点：后面只剩空白直到文件尾时才是程序结束标志；否则是记录域访问 rec.x 里的 "."（原来一律当作程序结束，记录类型无法使用）
+        int n=0;
+        do { ch=getChar(); n++; } while(!file.eof()&&(ch=='\n'||ch=='\r'||ch=='\t'||ch==' '));
+        bool atEnd=file.eof();
+        while(n-->0) undoChar();
+        if(atEnd)
+        {
+            tempString="";
+            return 2;
+        }
+		token=new Token(tempString,"singleBoundary",curLine);
+		tokenList.push(*token);
+		tempString="";
+        return true;
     }
 }
 
@@ -316,6 +330,7 @@ void wordScanner::start()
 	cout<<"----------------------词法分析---------------------"<<endl;
 	while(!file.eof())//文件未结束
 	{
+		size_t errBefore=error.size();
 
 		if(ans=isID()){}
 		else if(ans=isChar()){}
@@ -326,19 +341,22 @@ void wordScanner::start()
 		else if(ans=isArray()){if(ans==2) break;}
 		else
 		{
+			 if(error.size()>errBefore) continue; //某个子程序已经报错并回退了位置，重新从 isID 开始识别
 			 ch=getChar();
+			 if(file.eof()) break; //读到文件尾（源程序没有以 . 结束），正常结束
 			 string str;
-             str="未知错误 "+ch;
+             str="未知错误 ";
+             str+=ch;
              str+=" 第";
-             str+=curLine+0x30;
+             str+=lineStr(curLine);
              str+="行";
              tempString="";
              error.push_back(str);
+             wordErrorState=true;
 		}
 	}
 
-	if(file.eof())
-        wordErrorState=false;
+	wordErrorState=!error.empty(); //本次只要记录过错误就置错误状态（原来到文件尾会把已有错误清掉）
 
 	if(wordErrorState==false)
     {

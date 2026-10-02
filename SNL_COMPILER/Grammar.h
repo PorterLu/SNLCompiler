@@ -43,7 +43,7 @@ struct Production
         for(i=0;i<67;i++)
             if(right[pos]==unUltimateSign[i])
                 return i;
-        for(i=0;i<39;i++)
+        for(i=0;i<40;i++)
             if(right[pos]==ultimateWord[i])
                 return i+67;
         return -1;
@@ -66,7 +66,7 @@ struct Item
 struct GrammarAnalyzer
 {
     Production production[104];
-    int llTable[67][39];
+    int llTable[67][40]; //终结符有 40 个（".." 是第 40 个），原来 39 列会越界
     UUsign UUsignArray[107];
     TokenList tokenList;
     Node* root;
