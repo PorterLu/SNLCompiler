@@ -3,6 +3,7 @@
 #include "Word.h"       //词法分析头文件
 #include "resource.h"   //资源
 #include "Gen.h"        //语义分析与代码生成头文件
+#include "Vm.h"         //中间代码虚拟机头文件
 using namespace std;
 
 #define ID_EDIT     1
@@ -23,6 +24,55 @@ BOOL CALLBACK GrammarDlg(HWND, UINT, WPARAM, LPARAM);   //语法分析子窗口回调函数
 BOOL CALLBACK TreeDlg(HWND, UINT, WPARAM, LPARAM);   //语法树子窗口回调函数
 BOOL CALLBACK BuildDlg(HWND, UINT, WPARAM, LPARAM);  //一键编译结果窗口回调函数
 static string buildText;                                //一键编译结果窗口显示的文本
+
+//把 \n 换成 \r\n（编辑框和多行文本框只认 \r\n）
+static string CrLf (const string& s)
+{
+     string r ;
+     for (size_t i = 0 ; i < s.size () ; i++) { if (s[i] == '\n') r += "\r\n" ; else r += s[i] ; }
+     return r ;
+}
+//程序输入对话框：虚拟机执行到 read 时弹出
+static string inputText ;
+BOOL CALLBACK InputDlg (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+     char buf[256] ;
+     switch (message)
+     {
+     case WM_INITDIALOG:
+          SetDlgItemText (hwnd, IDC_INPUT_PROMPT, (LPCSTR) lParam) ;
+          SetFocus (GetDlgItem (hwnd, IDC_INPUT_EDIT)) ;
+          return FALSE ;
+     case WM_COMMAND:
+          if (LOWORD (wParam) == IDOK)
+          {
+               GetDlgItemText (hwnd, IDC_INPUT_EDIT, buf, sizeof buf) ;
+               inputText = buf ;
+               EndDialog (hwnd, IDOK) ;
+               return TRUE ;
+          }
+          if (LOWORD (wParam) == IDCANCEL) { EndDialog (hwnd, IDCANCEL) ; return TRUE ; }
+          break ;
+     case WM_CLOSE:
+          EndDialog (hwnd, IDCANCEL) ;
+          return TRUE ;
+     }
+     return FALSE ;
+}
+//虚拟机的输入输出：read 弹对话框要输入，write 的内容累积到字符串里
+struct DialogIO : VmIO
+{
+     HWND owner ;
+     string out ;
+     DialogIO (HWND h) : owner (h) {}
+     bool ask (const char* prompt)
+     {
+          return DialogBoxParam (hInst, MAKEINTRESOURCE (IDC_INPUT_DIALOG), owner, (DLGPROC) InputDlg, (LPARAM) prompt) == IDOK ;
+     }
+     bool readInt (int& v) { if (!ask ("程序执行到 read，请输入一个整数：")) return false ; v = atoi (inputText.c_str ()) ; return true ; }
+     bool readChar (char& c) { if (!ask ("程序执行到 read，请输入一个字符：")) return false ; c = inputText.empty () ? ' ' : inputText[0] ; return true ; }
+     void write (const string& s) { out += s ; }
+} ;
 int vScroll=0;
 int constMaxWidth;
 INT hScroll=0;
@@ -174,6 +224,22 @@ void OkMessage (HWND hwnd, TCHAR * szMessage, TCHAR * szTitleName)
      MessageBox (hwnd, szBuffer, szAppName, MB_OK | MB_ICONEXCLAMATION) ;
 }
 
+//把单独的 \n 补成 \r\n，否则 Mac / Linux 上写的文件在编辑框里不分行
+static unsigned char* ExpandNewlines (unsigned char* text)
+{
+     int n = 0, i, j ;
+     for (i = 0 ; text[i] ; i++) if (text[i] == '\n' && (i == 0 || text[i-1] != '\r')) n++ ;
+     if (n == 0) return text ;
+     unsigned char* out = (unsigned char*) malloc (i + n + 1) ;
+     for (i = 0, j = 0 ; text[i] ; i++)
+     {
+          if (text[i] == '\n' && (i == 0 || text[i-1] != '\r')) out[j++] = '\r' ;
+          out[j++] = text[i] ;
+     }
+     out[j] = '\0' ;
+     free (text) ;
+     return out ;
+}
 //读取一个文件并显示
 BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
 {
@@ -264,6 +330,7 @@ BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
                memcpy (pConv, pText, iFileLength) ;
                pConv[iFileLength] = '\0' ;
           }
+          pConv = ExpandNewlines (pConv) ;
 #endif
      }
 
@@ -511,7 +578,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 ShowWindow(hDlgChild,SW_SHOW);
                 return 0;
              case IDC_BUILD:
-                //一键编译：词法分析 -> 语法分析 -> 语义分析并生成 C 程序 -> 若机器上有 gcc 则再编译成 exe
+                //一键编译：词法分析 -> 语法分析 -> 语义分析并生成中间代码 -> 在虚拟机上直接运行
                 if(szFileName[0]=='\0')
                 {
                     MessageBox(hwnd,"请打开文件","提醒",MB_OK);
@@ -543,8 +610,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                         else
                         {
                             CodeGenerator gen;
-                            string code=gen.generate(ga->root);
-                            if(!gen.errors.empty())
+                            if(!gen.generate(ga->root))
                             {
                                 report="语义错误：\r\n";
                                 for(unsigned i=0;i<gen.errors.size();i++) report+=gen.errors[i]+"\r\n";
@@ -554,22 +620,16 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 string base=fileName;
                                 size_t dot=base.rfind('.'), slash=base.find_last_of("\\/");
                                 if(dot!=string::npos&&(slash==string::npos||dot>slash)) base=base.substr(0,dot);
-                                string cPath=base+".c", exePath=base+".exe";
-                                FILE* f=fopen(cPath.c_str(),"w");
-                                if(f){ fputs(code.c_str(),f); fclose(f); }
-                                report="已生成 C 程序："+cPath+"\r\n";
-                                if(system("gcc --version >nul 2>&1")==0)
-                                {
-                                    string cmd="gcc -w -o \""+exePath+"\" \""+cPath+"\"";
-                                    if(system(cmd.c_str())==0) report+="已用 gcc 编译为："+exePath+"\r\n";
-                                    else report+="gcc 编译失败\r\n";
-                                }
-                                else report+="未找到 gcc，请用其他 C 编译器编译该文件\r\n";
-                                report+="\r\n";
-                                for(unsigned i=0;i<code.size();i++)
-                                {
-                                    if(code[i]=='\n') report+="\r\n"; else report+=code[i];
-                                }
+                                string irPath=base+".ir";
+                                string listing=gen.ir.listing();
+                                FILE* f=fopen(irPath.c_str(),"w");
+                                if(f){ fputs(listing.c_str(),f); fclose(f); }
+                                DialogIO io(hwnd);
+                                Vm vm(gen.ir,io);
+                                bool ok=vm.run();
+                                report="已生成中间代码："+irPath+"\r\n\r\n==== 程序输出 ====\r\n"+CrLf(io.out);
+                                if(!ok) report+="运行错误："+vm.error+"\r\n";
+                                report+="\r\n==== 中间代码（四元式） ====\r\n"+CrLf(listing);
                             }
                         }
                         delete ga;

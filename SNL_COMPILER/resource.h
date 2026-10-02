@@ -10,6 +10,9 @@
 #define IDC_TREE_DIALOG                 109
 #define IDC_BUILD_DIALOG                110
 #define IDC_BUILD_EDIT                  1001
+#define IDC_INPUT_DIALOG                111
+#define IDC_INPUT_EDIT                  1002
+#define IDC_INPUT_PROMPT                1003
 #define IDC_CREATE                      40004
 #define IDC_OPEN                        40005
 #define IDC_WORD                        40006
@@ -23,9 +26,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        111
+#define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1002
+#define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
