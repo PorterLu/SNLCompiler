@@ -1,0 +1,41 @@
+program demo
+{ test program: types, procedures, loops, arrays and records }
+type  arr = array [1..10] of integer;
+      rec = record
+               integer x, y;
+               char c;
+            end;
+var   integer i, sum;
+      arr a;
+      rec r;
+procedure fill(var arr t; integer n);
+var integer k;
+begin
+   k := 1;
+   while k < n do
+      t[k] := k * 2;
+      k := k + 1
+   endwh
+end
+procedure add(integer p, q);
+begin
+   return(p + q)
+end
+begin
+   read(i);
+   fill(a, 10);
+   sum := 0;
+   i := 1;
+   while i < 10 do
+      sum := sum + a[i];
+      i := i + 1
+   endwh;
+   r.x := sum;
+   r.y := (sum - 1) / 2;
+   add(r.x, r.y);
+   if r.x < r.y then
+      write(r.x)
+   else
+      write(r.y)
+   fi
+end.
