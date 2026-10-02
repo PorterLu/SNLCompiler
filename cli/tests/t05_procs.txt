@@ -1,0 +1,18 @@
+program procs
+var integer g;
+procedure inc(var integer a; integer d);
+begin
+   a := a + d
+end
+procedure show(integer v);
+var integer tmp;
+begin
+   tmp := v;
+   write(tmp)
+end
+begin
+   g := 0;
+   inc(g, 5);
+   show(g);
+   show()
+end.

@@ -1,0 +1,6 @@
+program bad
+var integer a;
+begin
+   a := 'ab';
+   a := 1 # 2
+end.

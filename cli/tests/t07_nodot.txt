@@ -1,0 +1,4 @@
+program nodot
+begin
+   write(1)
+end

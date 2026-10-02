@@ -1,0 +1,16 @@
+program expr
+var integer a, b;
+    integer c;
+begin
+   a := 1;
+   b := (a + 2) * 3 - 4 / 2;
+   if a < b then
+      c := a
+   else
+      c := b
+   fi;
+   while c < 10 do
+      c := c + 1
+   endwh;
+   if a = b then write(a) else write(b) fi
+end.

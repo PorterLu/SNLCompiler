@@ -1,0 +1,6 @@
+program bad2
+var integer a;
+begin
+   a := 1 +;
+   if a then write(a) fi
+end.

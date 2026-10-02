@@ -1,0 +1,7 @@
+program io
+var integer x;
+begin
+   read(x);
+   write(x + 1);
+   return(x)
+end.

@@ -1,0 +1,10 @@
+program sd
+type  i=integer;
+var  i x;
+procedure sd(integer a);
+begin 
+   write(a)
+end    
+begin
+   a:=1
+end. 

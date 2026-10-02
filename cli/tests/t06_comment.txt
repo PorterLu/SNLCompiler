@@ -1,0 +1,8 @@
+program cmt
+{ 注释可以跨行
+  comments may span several lines }
+var integer a;
+begin
+   a := 1 { 行内注释 };
+   write(a)
+end.
