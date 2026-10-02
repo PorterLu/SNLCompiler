@@ -39,6 +39,8 @@
 		</Linker>
 		<Unit filename="Grammar.cpp" />
 		<Unit filename="Grammar.h" />
+		<Unit filename="Gen.cpp" />
+		<Unit filename="Gen.h" />
 		<Unit filename="SNL.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>

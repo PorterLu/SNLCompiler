@@ -53,11 +53,15 @@ struct Node
     vector<Node*> son;
     Node* father;
     int curSon;
+    string value;   //终结符结点对应的单词（标识符名、数值等），代码生成要用
+    int line;       //该单词所在的行
 
     Node(string n){
         name=n;
         father=NULL;
         curSon=0;
+        value="";
+        line=0;
         son.clear();
     }
 

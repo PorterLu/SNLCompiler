@@ -847,6 +847,8 @@ void GrammarAnalyzer::start()
                analyzeStack.pop();
                tempOperation->left=token.name;
                tempOperation->oper="匹配";
+               tempRoot->value=token.name;   //把单词记到树的叶子上，代码生成要用
+               tempRoot->line=token.line;
                itemList.push_back(*tempOperation);
                if(tokenList.pos<tokenList.num)      //注意取到尽头的时候不允许再取，否则无法执行后续程序
                     token=tokenList.get();
