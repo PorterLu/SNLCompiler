@@ -35,6 +35,14 @@ struct wordScanner
 		this->fileName=fileName;
 
 		file.open(fileName, ios::in|ios::binary); //打开文件，后期如果有UI设计一定不是这么打开的
+		{	//跳过 UTF-8 文件开头的 BOM（EF BB BF），否则会被当成三个非法字符
+			char bom[3]={0,0,0};
+			file.read(bom,3);
+			if(file.gcount()==3&&(unsigned char)bom[0]==0xEF&&(unsigned char)bom[1]==0xBB&&(unsigned char)bom[2]==0xBF)
+				offset=3;
+			file.clear();
+			file.seekg(0);
+		}
 	}
 
 	wordScanner()

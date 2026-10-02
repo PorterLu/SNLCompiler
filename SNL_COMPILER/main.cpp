@@ -2,6 +2,7 @@
 #include "Grammar.h"    //语法分析头文件
 #include "Word.h"       //词法分析头文件
 #include "resource.h"   //资源
+#include "Gen.h"        //语义分析与代码生成头文件
 using namespace std;
 
 #define ID_EDIT     1
@@ -20,6 +21,8 @@ HWND hDlgChild = NULL ;                                  //子窗口句柄
 BOOL CALLBACK WordDlg (HWND, UINT, WPARAM, LPARAM);     //词法分析子窗口回调函数
 BOOL CALLBACK GrammarDlg(HWND, UINT, WPARAM, LPARAM);   //语法分析子窗口回调函数
 BOOL CALLBACK TreeDlg(HWND, UINT, WPARAM, LPARAM);   //语法树子窗口回调函数
+BOOL CALLBACK BuildDlg(HWND, UINT, WPARAM, LPARAM);  //一键编译结果窗口回调函数
+static string buildText;                                //一键编译结果窗口显示的文本
 int vScroll=0;
 int constMaxWidth;
 INT hScroll=0;
@@ -227,6 +230,12 @@ BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
      else
      {
           pText = pBuffer ;
+          //跳过 UTF-8 BOM
+          if (iFileLength >= 3 && pText[0] == 0xEF && pText[1] == 0xBB && pText[2] == 0xBF)
+          {
+               pText += 3 ;
+               iFileLength -= 3 ;
+          }
 
           pConv =(unsigned char*) malloc (2 * iFileLength + 2) ;
 
@@ -235,7 +244,26 @@ BOOL PopFileRead (HWND hwndEdit, PTSTR pstrFileName)
                                iFileLength + 1) ;
 
 #else
-          lstrcpy ((PTSTR) pConv, (PTSTR) pText) ;
+          //源文件若是 UTF-8 编码（例如在 Mac / Linux 上写的），先转成当前代码页，编辑框里的中文才不会乱码
+          BOOL bHigh = FALSE ;
+          for (i = 0 ; i < iFileLength ; i++) if (pText[i] >= 0x80) { bHigh = TRUE ; break ; }
+          int wlen = bHigh ? MultiByteToWideChar (CP_UTF8, MB_ERR_INVALID_CHARS, (LPCSTR) pText, iFileLength, NULL, 0) : 0 ;
+          if (wlen > 0)
+          {
+               PWSTR pWide = (PWSTR) malloc ((wlen + 1) * sizeof (WCHAR)) ;
+               MultiByteToWideChar (CP_UTF8, 0, (LPCSTR) pText, iFileLength, pWide, wlen) ;
+               int alen = WideCharToMultiByte (CP_ACP, 0, pWide, wlen, NULL, 0, NULL, NULL) ;
+               free (pConv) ;
+               pConv = (unsigned char*) malloc (alen + 1) ;
+               WideCharToMultiByte (CP_ACP, 0, pWide, wlen, (LPSTR) pConv, alen, NULL, NULL) ;
+               pConv[alen] = '\0' ;
+               free (pWide) ;
+          }
+          else
+          {
+               memcpy (pConv, pText, iFileLength) ;
+               pConv[iFileLength] = '\0' ;
+          }
 #endif
      }
 
@@ -361,12 +389,14 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				   EnableMenuItem ((HMENU) wParam,IDC_WORD,   MF_ENABLED) ;
 				   EnableMenuItem ((HMENU) wParam,IDC_GRAMMAR,   MF_ENABLED) ;
 				   EnableMenuItem ((HMENU) wParam,IDC_TREE,   MF_ENABLED) ;
+				   EnableMenuItem ((HMENU) wParam,IDC_BUILD,  MF_ENABLED) ;
                }
                else
                {
                     EnableMenuItem ((HMENU) wParam,IDC_WORD,  MF_GRAYED) ;
                     EnableMenuItem ((HMENU) wParam,IDC_GRAMMAR,  MF_GRAYED) ;
                     EnableMenuItem ((HMENU) wParam,IDC_TREE,  MF_GRAYED) ;
+                    EnableMenuItem ((HMENU) wParam,IDC_BUILD, MF_GRAYED) ;
                }
                return 0 ;
           }
@@ -479,6 +509,75 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 hDlgChild = CreateDialog(hInst,MAKEINTRESOURCE(IDC_TREE_DIALOG),hwnd,TreeDlg);
                 ShowWindow(hDlgChild,SW_SHOW);
+                return 0;
+             case IDC_BUILD:
+                //一键编译：词法分析 -> 语法分析 -> 语义分析并生成 C 程序 -> 若机器上有 gcc 则再编译成 exe
+                if(szFileName[0]=='\0')
+                {
+                    MessageBox(hwnd,"请打开文件","提醒",MB_OK);
+                    return 0;
+                }
+                {
+                    string report;
+                    wordScanner* ws=new wordScanner(szFileName,hwnd);
+                    ws->start();
+                    if(wordErrorState)
+                    {
+                        report="词法错误：\r\n";
+                        for(unsigned i=0;i<ws->error.size();i++) report+=ws->error[i]+"\r\n";
+                        delete ws;
+                    }
+                    else
+                    {
+                        delete ws;
+                        fileName=szFileName;
+                        GrammarAnalyzer* ga=new GrammarAnalyzer(fileName,hwnd);
+                        ga->start();
+                        if(grammarErrorState)
+                        {
+                            report="语法错误：\r\n";
+                            for(unsigned i=0;i<ga->itemList.size();i++)
+                                if(ga->itemList[i].oper=="error")
+                                    report+="第"+ga->itemList[i].right+"行：单词 "+ga->itemList[i].left+" 附近有语法错误\r\n";
+                        }
+                        else
+                        {
+                            CodeGenerator gen;
+                            string code=gen.generate(ga->root);
+                            if(!gen.errors.empty())
+                            {
+                                report="语义错误：\r\n";
+                                for(unsigned i=0;i<gen.errors.size();i++) report+=gen.errors[i]+"\r\n";
+                            }
+                            else
+                            {
+                                string base=fileName;
+                                size_t dot=base.rfind('.'), slash=base.find_last_of("\\/");
+                                if(dot!=string::npos&&(slash==string::npos||dot>slash)) base=base.substr(0,dot);
+                                string cPath=base+".c", exePath=base+".exe";
+                                FILE* f=fopen(cPath.c_str(),"w");
+                                if(f){ fputs(code.c_str(),f); fclose(f); }
+                                report="已生成 C 程序："+cPath+"\r\n";
+                                if(system("gcc --version >nul 2>&1")==0)
+                                {
+                                    string cmd="gcc -w -o \""+exePath+"\" \""+cPath+"\"";
+                                    if(system(cmd.c_str())==0) report+="已用 gcc 编译为："+exePath+"\r\n";
+                                    else report+="gcc 编译失败\r\n";
+                                }
+                                else report+="未找到 gcc，请用其他 C 编译器编译该文件\r\n";
+                                report+="\r\n";
+                                for(unsigned i=0;i<code.size();i++)
+                                {
+                                    if(code[i]=='\n') report+="\r\n"; else report+=code[i];
+                                }
+                            }
+                        }
+                        delete ga;
+                    }
+                    buildText=report;
+                    hDlgChild=CreateDialogParam(hInst,MAKEINTRESOURCE(IDC_BUILD_DIALOG),hwnd,BuildDlg,(LPARAM)buildText.c_str());
+                    ShowWindow(hDlgChild,SW_SHOW);
+                }
                 return 0;
 		 }
 		 break;
@@ -917,6 +1016,25 @@ BOOL CALLBACK TreeDlg (HWND hwnd, UINT message,
           cout<<"over3"<<endl;
           return TRUE ;
 
+     }
+     return FALSE ;
+}
+
+//一键编译结果窗口：一个只读的多行编辑框，显示生成的 C 程序或错误列表
+BOOL CALLBACK BuildDlg (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+     switch (message)
+     {
+     case WM_INITDIALOG:
+          SetDlgItemText (hwnd, IDC_BUILD_EDIT, (LPCSTR) lParam) ;
+          return TRUE ;
+     case WM_SIZE:
+          MoveWindow (GetDlgItem (hwnd, IDC_BUILD_EDIT), 0, 0, LOWORD (lParam), HIWORD (lParam), TRUE) ;
+          return TRUE ;
+     case WM_CLOSE:
+          DestroyWindow (hwnd) ;
+          hDlgChild = NULL ;
+          return TRUE ;
      }
      return FALSE ;
 }
