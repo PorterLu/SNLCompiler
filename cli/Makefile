@@ -11,8 +11,8 @@ BUILD    ?= build
 CXX      ?= c++
 CXXFLAGS ?= -std=c++11 -g -O0 -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare
 
-CORE_SRCS  = Word.cpp Grammar.cpp Gen.cpp
-CORE_HDRS  = header.h Word.h Grammar.h Gen.h
+CORE_SRCS  = Word.cpp Grammar.cpp Gen.cpp Vm.cpp
+CORE_HDRS  = header.h Word.h Grammar.h Gen.h Ir.h Vm.h
 UTF8_FILES = $(addprefix $(BUILD)/src/,$(CORE_SRCS) $(CORE_HDRS))
 OBJS       = $(addprefix $(BUILD)/,$(CORE_SRCS:.cpp=.o)) $(BUILD)/cli_main.o
 TESTS      = $(sort $(wildcard tests/*.txt))
@@ -46,8 +46,8 @@ clean:
 #   * -fpermissive：main.cpp 里 AskConfirmation 没写返回类型；-static：不依赖 libstdc++/libgcc 的 dll
 #   * 源码按 GBK 编译，字符串保持 GBK，和原来 Code::Blocks 下的 ANSI 构建一致
 MINGW   ?= x86_64-w64-mingw32
-WINSRCS  = $(SRC_DIR)/main.cpp $(SRC_DIR)/Word.cpp $(SRC_DIR)/Grammar.cpp $(SRC_DIR)/Gen.cpp
-WINHDRS  = $(SRC_DIR)/header.h $(SRC_DIR)/Word.h $(SRC_DIR)/Grammar.h $(SRC_DIR)/Gen.h $(SRC_DIR)/resource.h
+WINSRCS  = $(SRC_DIR)/main.cpp $(SRC_DIR)/Word.cpp $(SRC_DIR)/Grammar.cpp $(SRC_DIR)/Gen.cpp $(SRC_DIR)/Vm.cpp
+WINHDRS  = $(SRC_DIR)/header.h $(SRC_DIR)/Word.h $(SRC_DIR)/Grammar.h $(SRC_DIR)/Gen.h $(SRC_DIR)/Ir.h $(SRC_DIR)/Vm.h $(SRC_DIR)/resource.h
 
 win: $(BUILD)/win/SNL_COMPILER.exe
 

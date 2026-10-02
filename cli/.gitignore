@@ -1,4 +1,3 @@
 build/
 tests/*.token
-tests/*.c
-tests/*.out
+tests/*.ir
