@@ -1,0 +1,10 @@
+# Code::Blocks / MinGW 的构建产物和个人设置
+SNL_COMPILER/bin/
+SNL_COMPILER/obj/
+SNL_COMPILER/*.layout
+SNL_COMPILER/*.depend
+SNL_COMPILER/*.APS
+*.save-failed
+# 编译器运行时在源程序旁边生成的文件
+*.token
+*.ir
