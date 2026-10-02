@@ -14,5 +14,5 @@ begin
    g := 0;
    inc(g, 5);
    show(g);
-   show()
+   show(g + 1)
 end.

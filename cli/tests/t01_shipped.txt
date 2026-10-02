@@ -6,5 +6,5 @@ begin
    write(a)
 end    
 begin
-   a:=1
+   x:=1
 end. 

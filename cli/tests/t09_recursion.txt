@@ -1,0 +1,17 @@
+program fact
+var integer n, result;
+procedure factorial(integer k; var integer r);
+var integer sub;
+begin
+   if k < 2 then
+      r := 1
+   else
+      factorial(k - 1, sub);
+      r := k * sub
+   fi
+end
+begin
+   read(n);
+   factorial(n, result);
+   write(result)
+end.

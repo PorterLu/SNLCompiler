@@ -1,0 +1,18 @@
+program nested
+var integer total;
+procedure outer(integer n);
+var integer acc;
+procedure inner(integer v);
+begin
+   acc := acc + v
+end
+begin
+   acc := 0;
+   inner(n);
+   inner(n * 2);
+   total := acc
+end
+begin
+   outer(7);
+   write(total)
+end.

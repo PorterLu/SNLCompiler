@@ -1,2 +1,4 @@
 build/
 tests/*.token
+tests/*.c
+tests/*.out

@@ -1,0 +1,6 @@
+program bad3
+var integer a;
+begin
+   b := a + 1;
+   a[1] := 2
+end.

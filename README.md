@@ -26,8 +26,15 @@ make test     # runs tests/*.txt  (t* must parse, e* must report an error)
 ./build/snl_cli tests/t02_expr.txt
 ```
 
-The tool prints the token list, the LL(1) analysis steps and the syntax tree.
+The tool prints the token list, the LL(1) analysis steps, the syntax tree and the C program
+generated from the tree (`<source>.c`, next to the source file). `--build` also compiles it with `cc`.
+`make test` checks that every `tests/t*.txt` compiles, that the generated C builds, and that the
+program's output matches `tests/<name>.expected` (input from `tests/<name>.in`).
 The sources stay GBK + CRLF; the Makefile converts copies to UTF-8 before compiling.
+
+In the Windows GUI the same pipeline is behind the menu item 编译 → 一键编译: lexical, syntax and
+semantic analysis in one click, the generated C program is written next to the source and shown
+in a window, and if `gcc` is on the PATH it is compiled to an `.exe` as well.
 
 ## Running the Windows GUI on macOS with Wine
 
