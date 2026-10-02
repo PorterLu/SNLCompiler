@@ -1,7 +1,7 @@
 #ifndef GEN_H_INCLUDED
 #define GEN_H_INCLUDED
-// 语义分析 + 中间代码生成：遍历语法树，检查语义，生成四元式形式的中间代码 (IRProgram)。
-// 用法：CodeGenerator gen; if (gen.generate(root)) 用 gen.ir; else 看 gen.errors。
+// semantic analysis + intermediate code generation: walk the syntax tree, check semantics, and produce quadruple intermediate code (IRProgram).
+// usage: CodeGenerator gen; if (gen.generate(root)) use gen.ir; else inspect gen.errors.
 #include "header.h"
 #include "Ir.h"
 #include <map>
@@ -11,10 +11,10 @@ struct TypeInfo
 {
     enum Kind { INT, CHAR, ARRAY, RECORD };
     Kind kind;
-    int size;                                      // 占的字数
-    int low, high;                                 // 数组下界、上界
-    TypeInfo* elem;                                // 数组元素类型
-    vector<string> fieldNames;                     // 记录的域
+    int size;                                      // size in words
+    int low, high;                                 // array lower and upper bounds
+    TypeInfo* elem;                                // array element type
+    vector<string> fieldNames;                     // record fields
     vector<TypeInfo*> fieldTypes;
     vector<int> fieldOffsets;
     TypeInfo(Kind k) : kind(k), size(1), low(0), high(0), elem(NULL) {}
@@ -30,11 +30,11 @@ struct Symbol
     Kind kind;
     string name;
     TypeInfo* type;             // VAR / TYPE
-    int level;                  // VAR：所在层次；PROC：过程体的层次
-    int offset;                 // VAR：在活动记录里的字偏移
-    bool isVarParam;            // VAR：是否 var 形参
-    int procIndex;              // PROC：在 ir.procs 里的下标
-    vector<ParamInfo> params;   // PROC：形参表
+    int level;                  // VAR: the level it lives at; PROC: the level of the procedure body
+    int offset;                 // VAR: word offset within the activation record
+    bool isVarParam;            // VAR: whether it is a var parameter
+    int procIndex;              // PROC: index into ir.procs
+    vector<ParamInfo> params;   // PROC: parameter list
     Symbol(Kind k, const string& n) : kind(k), name(n), type(NULL), level(0), offset(0), isVarParam(false), procIndex(-1) {}
 };
 
@@ -43,15 +43,15 @@ struct ExpRes { Operand opnd; TypeInfo* type; bool isVar; LValue lv; ExpRes() : 
 
 struct CodeGenerator
 {
-    vector<string> errors;                      // 语义错误，每条带行号
-    IRProgram ir;                               // 生成的中间代码
-    bool generate(Node* root);                  // 成功返回 true
+    vector<string> errors;                      // semantic errors, each with a line number
+    IRProgram ir;                               // the generated intermediate code
+    bool generate(Node* root);                  // returns true on success
 
-    vector< map<string, Symbol*> > scopes;      // 作用域栈
-    int level;                                  // 当前层次
-    int nextOffset;                             // 当前活动记录里下一个空闲字偏移
-    int tempBase, tempTop, tempMax;             // 临时变量区：起点、当前位置、高水位
-    vector<int> saved;                          // 进入嵌套过程时保存外层的分配状态
+    vector< map<string, Symbol*> > scopes;      // scope stack
+    int level;                                  // current level
+    int nextOffset;                             // next free word offset in the current activation record
+    int tempBase, tempTop, tempMax;             // temporary area: start, current position, high-water mark
+    vector<int> saved;                          // save the enclosing allocation state when entering a nested procedure
     int labelCount;
     TypeInfo* intType; TypeInfo* charType;
 

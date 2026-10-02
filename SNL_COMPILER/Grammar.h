@@ -66,7 +66,7 @@ struct Item
 struct GrammarAnalyzer
 {
     Production production[106];
-    int llTable[68][41]; //终结符有 40 个（".." 是第 40 个），原来 39 列会越界
+    int llTable[68][41]; //there are 40 terminals (".." is the 40th); the original 39 columns overflowed
     UUsign UUsignArray[109];
     TokenList tokenList;
     Node* root;
@@ -104,7 +104,7 @@ struct GrammarAnalyzer
         int i;
 	    Token* token;
 /*
-		for(i=0;i<tokenList.List.size();i++) //释放空间
+		for(i=0;i<tokenList.List.size();i++) //free the space
 		{
 			delete(&(tokenList.List[i]));
 		}

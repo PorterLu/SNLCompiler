@@ -12,7 +12,7 @@ struct wordScanner
 {
     int note;
 
-	//保留字数组
+	//reserved-word array
 	string reservedWord[21]={"program","procedure","type","var","if","then","else","fi",
 		"while","do","endwh","begin","end","read","write","array",
 		"of","record","return","integer","char"};
@@ -20,9 +20,9 @@ struct wordScanner
 	ifstream file;
 	HWND hwnd;
 	string fileName;
-	string tempString;//取得的单词
-	int curLine;//当前行
-	int offset;//文件偏移
+	string tempString;//the lexeme just read
+	int curLine;//current line
+	int offset;//offset into the file
 	TokenList tokenList;
 	vector<string> error;
 
@@ -34,8 +34,8 @@ struct wordScanner
 		tempString="";
 		this->fileName=fileName;
 
-		file.open(fileName, ios::in|ios::binary); //打开文件，后期如果有UI设计一定不是这么打开的
-		{	//跳过 UTF-8 文件开头的 BOM（EF BB BF），否则会被当成三个非法字符
+		file.open(fileName, ios::in|ios::binary); //open the file; with a real UI this would not be how it is opened
+		{	//skip a UTF-8 BOM (EF BB BF) at the start of the file, otherwise it is read as three illegal characters
 			char bom[3]={0,0,0};
 			file.read(bom,3);
 			if(file.gcount()==3&&(unsigned char)bom[0]==0xEF&&(unsigned char)bom[1]==0xBB&&(unsigned char)bom[2]==0xBF)
@@ -52,23 +52,23 @@ struct wordScanner
 		offset=0;
 		tempString="";
 
-		//file.open(fileName); //打开文件，后期如果有UI设计一定不是这么打开的
+		//file.open(fileName); //open the file; with a real UI this would not be how it is opened
 	}
 
-	bool isReservedWord(string tempString);//是否时保留字，作为isID()子程序
-	int isID();//是否是标识符
+	bool isReservedWord(string tempString);//whether it is a reserved word; a helper of isID()
+	int isID();//whether it is an identifier
 	bool isChar();
 	bool isInteger();
 	bool isSingleBoundary();
 	bool isDoubleBoundary();
 	bool isNotes();
-	bool isString();   //字符串常量 "..."（语言扩展，给 write 用）
+	bool isString();   //string constant "..." (language extension, used by write)
 	int isArray();
 	void start();
 	void printResult();
 	void createTokenFile();
 
-	char getChar()//读取 offset 处的字符并后移。若前一个字符是 '\n'，说明刚跨过一个换行，行号加一
+	char getChar()//read the character at offset and advance. If the previous character was '\n' a newline was just crossed, so increment the line number
 	{
 		char ch;
 		if(offset>=1)
@@ -78,14 +78,14 @@ struct wordScanner
 			if(file.get()=='\n')
 				curLine++;
 		}
-		file.clear();      //读到文件尾后流会置 eof/fail 位，不清掉的话后面的 seekg 全部失效
+		file.clear();      //after end of file the stream sets its eof/fail bits; without clearing them every later seekg would fail
 		file.seekg(offset);
 		ch=file.get();
 		offset++;
 		return ch;
 	}
 
-	void undoChar()//回退一个字符。若被回退的字符前面是 '\n'，则撤销刚才的行号加一
+	void undoChar()//back up one character. If the character before it is '\n', undo the line-number increment
 	{
 		if(offset>=2)
 		{
@@ -98,7 +98,7 @@ struct wordScanner
 	}
 
 	bool isNumber(char ch)
-	{     //判断一个字符是否为数字
+	{     //test whether a character is a digit
 		if((ch>='0')&&(ch<='9'))
 			return true;
 		else
@@ -106,7 +106,7 @@ struct wordScanner
 	}
 
 	bool isLetter(char ch)
-	{        //判断一个字符是否为字母
+	{        //test whether a character is a letter
 		if ((ch>='a')&&(ch<='z'))
 			return true;
 		if ((ch>='A')&&(ch<='Z'))
@@ -119,7 +119,7 @@ struct wordScanner
 	    int i;
 	    Token* token;
 /*
-		for(i=0;i<tokenList.List.size();i++) //释放空间
+		for(i=0;i<tokenList.List.size();i++) //free the space
 		{
 			delete(&(tokenList.List[i]));
 		}

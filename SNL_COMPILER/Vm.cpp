@@ -22,7 +22,7 @@ int Vm::addr(const Operand& o)
     {
         int slot = display[o.level] + o.value;
         if (slot < 0 || slot >= (int)mem.size()) throw string("内存地址越界");
-        a = mem[slot];                            // 槽里存的是实参的地址
+        a = mem[slot];                            // the slot holds the address of the actual argument
     }
     else throw string("操作数不是变量");
     if (a < 0 || a >= (int)mem.size()) throw string("内存地址越界");

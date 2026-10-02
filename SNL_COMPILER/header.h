@@ -22,27 +22,27 @@ struct Token
 	}
 };
 
-//Token序列的数据结构
+//data structure for the token sequence
 struct TokenList
 {
-	vector<Token> List;  //用于存储token
-	int num;			//token长度
-	int pos;			//当前的指针指向哪一个token
+	vector<Token> List;  //stores the tokens
+	int num;			//number of tokens
+	int pos;			//which token the cursor points at
 
-	void push(Token& token) //向序列压入一个token
+	void push(Token& token) //push a token onto the sequence
 	{
 		List.push_back(token);
 		num++;
 	}
 
-	Token get()   //取得一个token，指针后移一位
+	Token get()   //fetch a token and advance the cursor by one
 	{
 		Token temp = List[pos];
 		pos++;
 		return temp;
 	}
 
-	void unget(){pos=pos>0?pos-1:0;} //指针回退一位
+	void unget(){pos=pos>0?pos-1:0;} //move the cursor back by one
 
 	TokenList(){num=0; pos=0;}
 };
@@ -53,8 +53,8 @@ struct Node
     vector<Node*> son;
     Node* father;
     int curSon;
-    string value;   //终结符结点对应的单词（标识符名、数值等），代码生成要用
-    int line;       //该单词所在的行
+    string value;   //the lexeme of a terminal node (identifier name, number, etc.); code generation needs it
+    int line;       //the line the lexeme is on
 
     Node(string n){
         name=n;

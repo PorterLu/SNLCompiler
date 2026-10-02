@@ -5,7 +5,7 @@
 #include<sstream>
 using namespace std;
 
-static string lineStr(int line) //行号转字符串（原来用 curLine+0x30 拼接，只能表示 0~9）
+static string lineStr(int line) //line number to string (the original curLine+0x30 could only represent 0-9)
 {
 	stringstream ss;
 	ss<<line;
@@ -15,7 +15,7 @@ bool wordScanner::isChar()
 {
 	Token* token;
 	char ch;
-	bool isError=false; //本次识别是否出错。原来直接拿全局 wordErrorState 做分支，前面一旦出过错，后面所有合法的字符常量都会被误判
+	bool isError=false; //whether this scan failed. The original code branched on the global wordErrorState, so once any error had occurred every later valid char constant was misjudged
 	ch=getChar();
     while(ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')
         ch=getChar();
@@ -24,11 +24,11 @@ bool wordScanner::isChar()
         undoChar();
 		return false;
     }
-	ch=getChar();          //读'后的第一个字符
+	ch=getChar();          //read the first character after the opening quote
     if(isNumber(ch)||isLetter(ch))
 	{
         tempString+=ch;
-        ch=getChar();             //读字母或数字后的第一个字符
+        ch=getChar();             //read the first character after the letter or digit
     }
     else
 	{
@@ -49,7 +49,7 @@ bool wordScanner::isChar()
 		else
 		{
 			tempString='\'';
-			undoChar();         //  回退两次，解决出现类似 '12 这种形式
+			undoChar();         //  back up twice to handle forms like '12
 			undoChar();
 			isError=true;
 		}
@@ -79,7 +79,7 @@ bool wordScanner::isInteger()
         tempString+=ch;
         ch=getChar();
     }
-    undoChar();     //回退文件字符指针一位
+    undoChar();     //back the file character pointer up by one
 	token=new Token(tempString,"integer",curLine);
     tokenList.push(*token);
     //cout<<tempString<<endl;
@@ -124,7 +124,7 @@ bool wordScanner::isDoubleBoundary()
 	tempString+=ch;
     ch=getChar();
     if(ch=='='){
-        tempString+=ch;     //双分界
+        tempString+=ch;     //double delimiter
 		token=new Token(tempString,"doubleBoundary",curLine);
 		tokenList.push(*token);
 		//cout<<tempString<<endl;
@@ -189,7 +189,7 @@ bool wordScanner::isString()
 		undoChar();
 		return false;
 	}
-	//字符串常量 "..."：不支持转义，不能跨行
+	//string constant "...": no escapes, cannot span lines
 	int line=curLine;
 	ch=getChar();
 	while(!file.eof()&&ch!='"'&&ch!='\n')
@@ -223,7 +223,7 @@ int wordScanner::isArray()
 	}
 	tempString+=ch;
     ch=getChar();
-    if(ch=='.'){     //数组分界
+    if(ch=='.'){     //array delimiter
         tempString+=ch;
 		token=new Token(tempString,"arrayBound",curLine);
 		tokenList.push(*token);
@@ -231,8 +231,8 @@ int wordScanner::isArray()
         return true;
     }
     else{
-        undoChar();     //回退文件字符指针一位
-        //单独一个点：后面只剩空白直到文件尾时才是程序结束标志；否则是记录域访问 rec.x 里的 "."（原来一律当作程序结束，记录类型无法使用）
+        undoChar();     //back the file character pointer up by one
+        //a lone dot: it ends the program only when nothing but whitespace follows up to end of file; otherwise it is the "." of a record field access like rec.x (the original always treated it as end of program, so records were unusable)
         int n=0;
         do { ch=getChar(); n++; } while(!file.eof()&&(ch=='\n'||ch=='\r'||ch=='\t'||ch==' '));
         bool atEnd=file.eof();
@@ -249,8 +249,8 @@ int wordScanner::isArray()
     }
 }
 
-/*总共有20个保留字，已在header.h中定义，遍历保留字数组，
-与当前标识符比较，进行判断，输入的参数为可能是保留字的标识符*/
+/*there are 20 reserved words, defined in header.h; scan the reserved-word array
+and compare with the current identifier; the argument is an identifier that might be a reserved word*/
 bool wordScanner::isReservedWord(string tempString)
 {
 	int i;
@@ -262,43 +262,43 @@ bool wordScanner::isReservedWord(string tempString)
 	return false;
 }
 
-/*判断是否是标识符的函数，返回值为0不是标识符，1时是标识符，2时是保留字，这里将保留字看作特殊的标识符*/
+/*decides whether this is an identifier: 0 = not an identifier, 1 = identifier, 2 = reserved word (a reserved word is treated as a special identifier)*/
 int wordScanner::isID()
 {
-	char curChar;  //当前字符
+	char curChar;  //current character
 	Token* token;
-	bool isOver=false,isID=false; //isOver表示是否可以推出自动机，isID表示是否是标识符
-	int transTable[2][2]={{-1,1}, {1,1}};//转换表，自动机的状态转换数组，-1表示进入错误状态
-	int state=0; //自动初始状态
-	curChar = getChar(); //获取一个字符
-	//开始前先除掉空白字符，空格，制表符，回车
+	bool isOver=false,isID=false; //isOver tells whether to leave the automaton, isID tells whether it is an identifier
+	int transTable[2][2]={{-1,1}, {1,1}};//transition table of the automaton; -1 means entering the error state
+	int state=0; //initial state of the automaton
+	curChar = getChar(); //get a character
+	//first skip whitespace: spaces, tabs and newlines
     while(curChar=='\n'||curChar=='\r'||curChar=='\t'||curChar==' ')
         curChar=getChar();
-	//进入标识符判断的自动机，字母开头，数字和字母组成的字符串
-	while(((curChar>=48&&curChar<=57)||(curChar>=65&&curChar<=90)||(curChar>=97&&curChar<=122))&&!isOver)//确定是否是在表示符的字符集合里
+	//enter the identifier automaton: a letter followed by letters and digits
+	while(((curChar>=48&&curChar<=57)||(curChar>=65&&curChar<=90)||(curChar>=97&&curChar<=122))&&!isOver)//check whether the character is in the identifier character set
 	{
 		switch(state)
 		{
 			case 0:
-				if(curChar>=48&&curChar<=57)  //状态0是初始状态，输入数字，意味着数字开头，不符合定义，退出自动机
+				if(curChar>=48&&curChar<=57)  //state 0 is the initial state; a digit here means a leading digit, which is not an identifier, so leave the automaton
 					isOver=true;
 				else
 				{
-					state=transTable[state][1]; //转换
-                    tempString+=curChar; //生成字符串
-					curChar=getChar(); //去下一个字符
-					isID=true;		//字符串，一号状态时终止状态
+					state=transTable[state][1]; //transition
+                    tempString+=curChar; //build the string
+					curChar=getChar(); //move to the next character
+					isID=true;		//an identifier; state 1 is an accepting state
 				}
 				break;
 			case 1:
-				if(curChar>=48&&curChar<=57) //数字
+				if(curChar>=48&&curChar<=57) //digit
 				{
 					state=transTable[state][0];
                     tempString+=curChar;
 					curChar=getChar();
 					isID=true;
 				}
-				else  //字母
+				else  //letter
 				{
 					state=transTable[state][1];
                     tempString+=curChar;
@@ -307,8 +307,8 @@ int wordScanner::isID()
 				}
 		}
 	}
-	undoChar(); //回退一个字符，因为最新的字符一定不是标识符的部分
-	if(isID&&isReservedWord(tempString))//是否是保留字
+	undoChar(); //back up one character, since the last one is not part of the identifier
+	if(isID&&isReservedWord(tempString))//is it a reserved word
 	{
 		token=new Token(tempString,"reservedWord",curLine);
 		tokenList.push(*token);
@@ -357,10 +357,10 @@ void wordScanner::start()
 {
     //file.open(fileName);
     cout<<"word start"<<endl;
-	int ans; //判断符
+	int ans; //result flag
 	char ch;
 	cout<<"----------------------词法分析---------------------"<<endl;
-	while(!file.eof())//文件未结束
+	while(!file.eof())//file not finished
 	{
 		size_t errBefore=error.size();
 
@@ -374,9 +374,9 @@ void wordScanner::start()
 		else if(ans=isArray()){if(ans==2) break;}
 		else
 		{
-			 if(error.size()>errBefore) continue; //某个子程序已经报错并回退了位置，重新从 isID 开始识别
+			 if(error.size()>errBefore) continue; //some sub-scanner already reported an error and backed up; restart scanning from isID
 			 ch=getChar();
-			 if(file.eof()) break; //读到文件尾（源程序没有以 . 结束），正常结束
+			 if(file.eof()) break; //reached end of file (the source did not end with '.'), terminate normally
 			 string str;
              str="未知错误 ";
              str+=ch;
@@ -389,7 +389,7 @@ void wordScanner::start()
 		}
 	}
 
-	wordErrorState=!error.empty(); //本次只要记录过错误就置错误状态（原来到文件尾会把已有错误清掉）
+	wordErrorState=!error.empty(); //set the error state whenever any error was recorded (the original cleared existing errors at end of file)
 
 	if(wordErrorState==false)
     {

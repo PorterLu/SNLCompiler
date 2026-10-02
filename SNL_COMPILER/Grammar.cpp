@@ -460,7 +460,7 @@ void GrammarAnalyzer::initProduction()
     production[103].left=66;
     production[103].right.push_back("/");
 
-    //语言扩展：write 可以直接输出字符串常量
+    //language extension: write can output a string constant directly
     production[104].left=67;
     production[104].right.push_back("Exp");
     production[104].right.push_back(")");
@@ -746,7 +746,7 @@ void GrammarAnalyzer::initTable(){
 
 
 
-void GrammarAnalyzer::readToken() //读取token，并做一定的处理 ，方便语法分析
+void GrammarAnalyzer::readToken() //read the tokens and massage them a little for the parser
 {
     FILE* file;
     string str;
@@ -756,7 +756,7 @@ void GrammarAnalyzer::readToken() //读取token，并做一定的处理 ，方�
     char line[1024];
     string str1,str2;
     Token* tempToken;
-    //每行的格式是 "单词 类型 行号"，字符串常量的单词本身可以含空格，所以从行尾往前拆
+    //each line is "lexeme type line"; a string constant lexeme may contain spaces, so split from the end of the line
     while(fgets(line,sizeof(line),file))
     {
         string s=line;
@@ -841,7 +841,7 @@ void GrammarAnalyzer::start()
                if(str=="@ ")
                 tempOperation->right="ε";
                itemList.push_back(*tempOperation);
-               for(i=0;i<tempProduction.right.size();i++){          //  加入子节点
+               for(i=0;i<tempProduction.right.size();i++){          //  add the child nodes
                     Node* tempSon=new Node(UUsignArray[position(tempProduction.right[i])].left);
                     if(UUsignArray[position(tempProduction.right[i])].left=="@")
                         tempSon->name="ε";
@@ -849,7 +849,7 @@ void GrammarAnalyzer::start()
                     tempRoot->son.push_back(tempSon);
                     nodeList.push_back(tempSon);
                }
-               tempRoot=tempRoot->getSon();      //  转向子节点
+               tempRoot=tempRoot->getSon();      //  move to the child node
                //cout<<tempRoot->name<<endl;
                depth++;
                if(depth>maxDepth)
@@ -861,12 +861,12 @@ void GrammarAnalyzer::start()
                analyzeStack.pop();
                tempOperation->left=token.name;
                tempOperation->oper="匹配";
-               tempRoot->value=token.name;   //把单词记到树的叶子上，代码生成要用
+               tempRoot->value=token.name;   //record the lexeme on the tree leaf; code generation needs it
                tempRoot->line=token.line;
                itemList.push_back(*tempOperation);
-               if(tokenList.pos<tokenList.num)      //注意取到尽头的时候不允许再取，否则无法执行后续程序
+               if(tokenList.pos<tokenList.num)      //do not fetch past the end, otherwise the rest cannot run
                     token=tokenList.get();
-               tempRoot=tempRoot->father;       //回到父节点
+               tempRoot=tempRoot->father;       //go back to the parent node
                depth--;
                while((tempRoot->curSon>tempRoot->son.size()-1)&&(tempRoot->father!=NULL)){
                     tempRoot->curSon=0;
@@ -874,14 +874,14 @@ void GrammarAnalyzer::start()
                     depth--;
                }
                if((tempRoot->curSon>tempRoot->son.size()-1)&&(tempRoot->father==NULL)){
-                    //cout<<"结束-----------------------"<<endl;
+                    //cout<<"end-----------------------"<<endl;
                     tempRoot->curSon=0;
                     this->root=tempRoot;
                     grammarErrorState=false;
-                    break;//树结束
+                    break;//tree finished
                }
                else{
-                    tempRoot=tempRoot->getSon(); //找到栈顶节点
+                    tempRoot=tempRoot->getSon(); //find the node at the top of the stack
                     depth++;
                }
            }
@@ -891,7 +891,7 @@ void GrammarAnalyzer::start()
                tempOperation->oper="匹配";
                itemList.push_back(*tempOperation);
                analyzeStack.pop();
-               tempRoot=tempRoot->father;       //回到父节点
+               tempRoot=tempRoot->father;       //go back to the parent node
                depth--;
                while((tempRoot->curSon>tempRoot->son.size()-1)&&(tempRoot->father!=NULL)){
                     tempRoot->curSon=0;
@@ -902,10 +902,10 @@ void GrammarAnalyzer::start()
                     tempRoot->curSon=0;
                     this->root=tempRoot;
                     grammarErrorState=true;
-                    break;//树结束
+                    break;//tree finished
                }
                else{
-                    tempRoot=tempRoot->getSon(); //找到栈顶节点
+                    tempRoot=tempRoot->getSon(); //find the node at the top of the stack
                }
            }
            else
@@ -956,13 +956,13 @@ void GrammarAnalyzer::printTree(Node* root){
             while(temp->son.size()==0){
                 temp=temp->father;
                 n--;
-                while(temp->father!=NULL&&temp->curSon>temp->son.size()-1){ //到根节点就停，否则解引用空指针
+                while(temp->father!=NULL&&temp->curSon>temp->son.size()-1){ //stop at the root, otherwise we would dereference a null pointer
                     temp=temp->father;
                     n--;
                 }
             }
         }
     }
-    for(int i=0;i<nodeList.size();i++) //遍历改动了 curSon，复位以便再次遍历
+    for(int i=0;i<nodeList.size();i++) //the walk changed curSon; reset it so the tree can be walked again
         nodeList[i]->curSon=0;
 }
