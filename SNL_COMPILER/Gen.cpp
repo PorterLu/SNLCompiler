@@ -14,7 +14,7 @@ int CodeGenerator::lineOf(Node* n)          // line number of the first token in
     for (size_t i = 0; i < n->son.size(); i++) { int l = lineOf(n->son[i]); if (l) return l; }
     return 0;
 }
-void CodeGenerator::error(int line, const string& msg) { errors.push_back("第" + itos(line) + "行：" + msg); }
+void CodeGenerator::error(int line, const string& msg) { errors.push_back("line " + itos(line) + ": " + msg); }
 void CodeGenerator::pushScope() { scopes.push_back(map<string, Symbol*>()); }
 void CodeGenerator::popScope() { scopes.pop_back(); }
 Symbol* CodeGenerator::lookup(const string& name)
@@ -28,13 +28,13 @@ Symbol* CodeGenerator::lookup(const string& name)
 }
 bool CodeGenerator::declare(Symbol* s, int line)
 {
-    if (scopes.back().count(s->name)) { error(line, "标识符 " + s->name + " 重复声明"); return false; }
+    if (scopes.back().count(s->name)) { error(line, "identifier " + s->name + " redeclared"); return false; }
     scopes.back()[s->name] = s;
     return true;
 }
 void CodeGenerator::checkScalar(ExpRes& r, int line)
 {
-    if (r.type && !r.type->isScalar()) { error(line, "此处的表达式必须是整数或字符类型"); r.type = NULL; }
+    if (r.type && !r.type->isScalar()) { error(line, "expression here must be integer or char"); r.type = NULL; }
 }
 void CodeGenerator::emit(const string& op, const Operand& a, const Operand& b, const Operand& r)
 {
@@ -109,8 +109,8 @@ TypeInfo* CodeGenerator::typeName(Node* n)       // TypeName -> BaseType | Struc
     if (c->name == "StructureType")
         return c->son[0]->name == "ArrayType" ? arrayType(c->son[0]) : recType(c->son[0]);
     Symbol* s = lookup(c->value);
-    if (!s) { error(c->line, "类型 " + c->value + " 未声明"); return NULL; }
-    if (s->kind != Symbol::TYPE) { error(c->line, c->value + " 不是类型名"); return NULL; }
+    if (!s) { error(c->line, "type " + c->value + " is not declared"); return NULL; }
+    if (s->kind != Symbol::TYPE) { error(c->line, c->value + " is not a type name"); return NULL; }
     return s->type;
 }
 TypeInfo* CodeGenerator::baseType(Node* n) { return n->son[0]->name == "integer" ? intType : charType; }
@@ -118,7 +118,7 @@ TypeInfo* CodeGenerator::arrayType(Node* n)       // ArrayType -> array [ Low ..
 {
     int low = atoi(n->son[2]->son[0]->value.c_str());
     int high = atoi(n->son[4]->son[0]->value.c_str());
-    if (high < low) { error(lineOf(n), "数组上界小于下界"); return NULL; }
+    if (high < low) { error(lineOf(n), "array upper bound is below lower bound"); return NULL; }
     TypeInfo* t = new TypeInfo(TypeInfo::ARRAY);
     t->low = low; t->high = high; t->elem = baseType(n->son[7]);
     t->size = high - low + 1;
@@ -135,7 +135,7 @@ TypeInfo* CodeGenerator::recType(Node* n)         // RecType -> record FieldDecL
         vector<Node*> ids = idList(f->son[1]);
         for (size_t i = 0; i < ids.size() && ft; i++)
         {
-            if (t->findField(ids[i]->value) >= 0) { error(ids[i]->line, "记录的域 " + ids[i]->value + " 重复"); continue; }
+            if (t->findField(ids[i]->value) >= 0) { error(ids[i]->line, "record field " + ids[i]->value + " is duplicated"); continue; }
             t->fieldNames.push_back(ids[i]->value);
             t->fieldTypes.push_back(ft);
             t->fieldOffsets.push_back(t->size);
@@ -237,8 +237,8 @@ LValue CodeGenerator::lvalue(Node* idNode, Node* vm)     // id VariMore; VariMor
 {
     LValue lv;
     Symbol* s = lookup(idNode->value);
-    if (!s) { error(idNode->line, "变量 " + idNode->value + " 未声明"); return lv; }
-    if (s->kind != Symbol::VAR) { error(idNode->line, idNode->value + " 不是变量"); return lv; }
+    if (!s) { error(idNode->line, "variable " + idNode->value + " is not declared"); return lv; }
+    if (s->kind != Symbol::VAR) { error(idNode->line, idNode->value + " is not a variable"); return lv; }
     lv.base = operandOf(s); lv.type = s->type;
     if (!vm || isEps(vm->son[0])) return lv;
     if (vm->son[0]->name == "[") return indexInto(lv, vm->son[1], idNode->line);
@@ -253,7 +253,7 @@ LValue CodeGenerator::indexInto(LValue lv, Node* expNode, int line)
     ExpRes i = exp(expNode); checkScalar(i, line);
     Operand iv = rvalue(i);
     if (!lv.type) return lv;
-    if (lv.type->kind != TypeInfo::ARRAY) { error(line, "对非数组变量使用下标"); lv.type = NULL; return lv; }
+    if (lv.type->kind != TypeInfo::ARRAY) { error(line, "subscript used on a non-array variable"); lv.type = NULL; return lv; }
     Operand off;                                   // offset = index - lower bound
     if (iv.kind == Operand::K_CONST) off = Operand::constant(iv.value - lv.type->low);
     else { off = newTemp(); emit("SUB", iv, Operand::constant(lv.type->low), off); }
@@ -268,9 +268,9 @@ LValue CodeGenerator::indexInto(LValue lv, Node* expNode, int line)
 LValue CodeGenerator::fieldOf(LValue lv, Node* fid)
 {
     if (!lv.type) return lv;
-    if (lv.type->kind != TypeInfo::RECORD) { error(fid->line, "对非记录变量访问域 " + fid->value); lv.type = NULL; return lv; }
+    if (lv.type->kind != TypeInfo::RECORD) { error(fid->line, "field access on a non-record variable: " + fid->value); lv.type = NULL; return lv; }
     int k = lv.type->findField(fid->value);
-    if (k < 0) { error(fid->line, "记录中没有域 " + fid->value); lv.type = NULL; return lv; }
+    if (k < 0) { error(fid->line, "record has no field " + fid->value); lv.type = NULL; return lv; }
     lv.off = Operand::constant(lv.type->fieldOffsets[k]); lv.hasOff = true;
     lv.type = lv.type->fieldTypes[k];
     return lv;
@@ -376,12 +376,12 @@ void CodeGenerator::stmList(Node* n)              // StmList -> Stm StmMore; Stm
 void CodeGenerator::call(Node* idNode, Node* actList)
 {
     Symbol* p = lookup(idNode->value);
-    if (!p) { error(idNode->line, "过程 " + idNode->value + " 未声明"); return; }
-    if (p->kind != Symbol::PROC) { error(idNode->line, idNode->value + " 不是过程"); return; }
+    if (!p) { error(idNode->line, "procedure " + idNode->value + " is not declared"); return; }
+    if (p->kind != Symbol::PROC) { error(idNode->line, idNode->value + " is not a procedure"); return; }
     vector<Node*> args = actParams(actList);
     if (args.size() != p->params.size())
     {
-        error(idNode->line, "过程 " + idNode->value + " 需要 " + itos((int)p->params.size()) + " 个参数，实际给了 " + itos((int)args.size()) + " 个");
+        error(idNode->line, "procedure " + idNode->value + " needs " + itos((int)p->params.size()) + " arguments but got " + itos((int)args.size()) + "");
         return;
     }
     for (size_t i = 0; i < args.size(); i++)
@@ -390,15 +390,15 @@ void CodeGenerator::call(Node* idNode, Node* actList)
         TypeInfo* want = p->params[i].type;
         if (p->params[i].isVar)
         {
-            if (!a.isVar) { error(idNode->line, "第 " + itos((int)i + 1) + " 个参数是 var 参数，实参必须是变量"); continue; }
+            if (!a.isVar) { error(idNode->line, "argument " + itos((int)i + 1) + " is a var parameter; the actual argument must be a variable"); continue; }
             if (a.type && a.type != want && !(a.type->isScalar() && want->isScalar() && a.type->kind == want->kind))
-                error(idNode->line, "第 " + itos((int)i + 1) + " 个实参的类型与 var 形参不一致");
+                error(idNode->line, "argument " + itos((int)i + 1) + " type does not match the var parameter");
             if (!a.lv.type) continue;
             emit("ARGREF", a.lv.base, a.lv.hasOff ? a.lv.off : Operand::constant(0));
         }
         else
         {
-            if (a.type && !sameType(a.type, want)) error(idNode->line, "第 " + itos((int)i + 1) + " 个实参的类型不匹配");
+            if (a.type && !sameType(a.type, want)) error(idNode->line, "argument " + itos((int)i + 1) + " has a mismatched type");
             emit("ARG", rvalue(a));
         }
     }
@@ -434,7 +434,7 @@ void CodeGenerator::stm(Node* n)
         Node* id = c->son[2]->son[0];
         LValue lv = lvalue(id, NULL);
         if (!lv.type) return;
-        if (!lv.type->isScalar()) { error(id->line, "read 只能读入整数或字符变量"); return; }
+        if (!lv.type->isScalar()) { error(id->line, "read accepts only an integer or char variable"); return; }
         emit(lv.type->kind == TypeInfo::CHAR ? "READC" : "READ", Operand(), Operand(), lv.base);
     }
     else if (c->name == "OutputStm")              // write ( OutputRest; OutputRest -> Exp ) | string )
@@ -448,7 +448,7 @@ void CodeGenerator::stm(Node* n)
         }
         ExpRes e = exp(rest->son[0]);
         if (!e.type) return;
-        if (!e.type->isScalar()) { error(lineOf(c), "write 只能输出整数或字符"); return; }
+        if (!e.type->isScalar()) { error(lineOf(c), "write accepts only an integer or char"); return; }
         emit(e.type->kind == TypeInfo::CHAR ? "WRITEC" : "WRITE", rvalue(e));
     }
     else if (c->name == "ReturnStm")              // return ( Exp )
@@ -466,7 +466,7 @@ void CodeGenerator::stm(Node* n)
             LValue lv = lvalue(c, ac->son[0]);
             ExpRes rhs = exp(ac->son[2]);
             if (!lv.type || !rhs.type) return;
-            if (!sameType(lv.type, rhs.type)) { error(c->line, "赋值两边的类型不匹配"); return; }
+            if (!sameType(lv.type, rhs.type)) { error(c->line, "assignment type mismatch"); return; }
             Operand v = rvalue(rhs);
             if (lv.type->isScalar())
             {

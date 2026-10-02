@@ -76,9 +76,9 @@ struct IRProgram
     {
         stringstream ss;
         for (size_t i = 0; i < procs.size(); i++)
-            ss << "; 过程 " << procs[i].name << ": 层次 " << procs[i].level << ", 入口 " << procs[i].entry
-               << ", 形参 " << procs[i].paramWords << " 字, 活动记录 " << procs[i].frameWords << " 字\n";
-        ss << "; 主程序: 入口 " << entry << ", 变量区 " << globalWords << " 字\n";
+            ss << "; procedure " << procs[i].name << ": level " << procs[i].level << ", entry " << procs[i].entry
+               << ", params " << procs[i].paramWords << " words, frame " << procs[i].frameWords << " words\n";
+        ss << "; main: entry " << entry << ", vars " << globalWords << " words\n";
         int lv = 0;
         for (size_t i = 0; i < code.size(); i++)
         {

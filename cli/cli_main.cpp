@@ -1,13 +1,14 @@
-// 命令行入口：在 macOS / Linux 上直接驱动原有的词法分析器 (wordScanner)、语法分析器 (GrammarAnalyzer)、
-// 中间代码生成器 (CodeGenerator) 和虚拟机 (Vm)，用 stdout 代替 Windows 对话框来输出结果。
+// Command-line entry point. On macOS / Linux it drives the original lexer (wordScanner),
+// parser (GrammarAnalyzer), intermediate-code generator (CodeGenerator) and virtual machine (Vm),
+// printing to stdout instead of the Windows dialogs.
 //
-// 用法:  snl_cli <源文件.txt> [--run] [--quiet] [--orig-tree]
-//   * 和 Windows 版一样，会在源文件旁边生成同名的 .token 文件，再由语法分析器读回去
-//   * 语法分析成功后做语义分析，生成四元式中间代码并写到同名的 .ir 文件
-//   * --run     在虚拟机上执行中间代码，程序的 read 从标准输入读，write 写到标准输出
-//   * --quiet   不打印单词表、分析步骤、语法树和中间代码（只剩错误信息和程序输出）
-//   * --orig-tree 用 Grammar.cpp 自带的 printTree 打印语法树
-//   * 退出码: 0 成功；1 词法 / 语法 / 语义 / 运行错误；2 参数或文件错误
+// Usage:  snl_cli <source.txt> [--run] [--quiet] [--orig-tree]
+//   * like the Windows build, it writes a sibling <source>.token file that the parser reads back
+//   * after a successful parse it runs semantic analysis and writes the quadruples to <source>.ir
+//   * --run       execute the intermediate code on the virtual machine (read from stdin, write to stdout)
+//   * --quiet     suppress the token list, analysis steps, syntax tree and intermediate code
+//   * --orig-tree print the syntax tree with Grammar.cpp's own printTree
+//   * exit code: 0 success; 1 lexical / syntax / semantic / runtime error; 2 bad argument or file
 #include "header.h"
 #include "Word.h"
 #include "Grammar.h"
@@ -37,7 +38,7 @@ static string stripExt(const string& path)
     return path.substr(0, dot);
 }
 
-struct StdIO : VmIO                             // 虚拟机的输入输出接到标准输入输出
+struct StdIO : VmIO                             // VM I/O wired to standard input/output
 {
     bool readInt(int& v) { return (bool)(cin >> v); }
     bool readChar(char& c) { return (bool)(cin >> c); }
@@ -57,11 +58,11 @@ int main(int argc, char** argv)
         else if (strcmp(argv[i], "--quiet") == 0) quiet = true;
     }
     string fileName = argv[1];
-    ostringstream sink;                         // --quiet 时把分析过程的输出吞掉
+    ostringstream sink;                         // with --quiet, swallow the analysis output
     streambuf* realOut = cout.rdbuf();
     if (quiet) cout.rdbuf(sink.rdbuf());
 
-    // ---- 1. 词法分析（对应 GUI 菜单「词法分析」）----
+    // ---- 1. lexical analysis (GUI menu: Lexical analysis) ----
     wordScanner* scanner = new wordScanner(argv[1], NULL);
     if (!scanner->file.is_open()) {
         fprintf(stderr, "cannot open %s\n", argv[1]);
@@ -70,38 +71,39 @@ int main(int argc, char** argv)
     scanner->start();
     if (wordErrorState) {
         cout.rdbuf(realOut);
-        cout << endl << "==== 词法错误 (" << scanner->error.size() << ") ====" << endl;
+        cout << endl << "==== Lexical errors (" << scanner->error.size() << ") ====" << endl;
         for (size_t i = 0; i < scanner->error.size(); i++) cout << scanner->error[i] << endl;
         return 1;
     }
 
-    // ---- 2. 语法分析（对应 GUI 菜单「语法分析」）----
+    // ---- 2. syntax analysis (GUI menu: Syntax analysis) ----
     GrammarAnalyzer* analyzer = new GrammarAnalyzer(fileName, NULL);
     analyzer->start();
-    cout << endl << "==== 分析步骤 (" << analyzer->itemList.size() << ") ====" << endl;
+    cout << endl << "==== Analysis steps (" << analyzer->itemList.size() << ") ====" << endl;
     for (size_t i = 0; i < analyzer->itemList.size(); i++) {
         const Item& it = analyzer->itemList[i];
         cout << it.left << "\t" << it.oper << "\t" << it.right << endl;
     }
     if (grammarErrorState) {
         cout.rdbuf(realOut);
-        cout << endl << "==== 语法错误 ====" << endl;
+        cout << endl << "==== Syntax errors ====" << endl;
         for (size_t i = 0; i < analyzer->itemList.size(); i++)
             if (analyzer->itemList[i].oper == "error")
-                cout << "第" << analyzer->itemList[i].right << "行：单词 " << analyzer->itemList[i].left << " 附近有语法错误" << endl;
+                cout << "line " << analyzer->itemList[i].right << ": syntax error near token "
+                     << analyzer->itemList[i].left << endl;
         return 1;
     }
 
-    // ---- 3. 语法树（对应 GUI 菜单「语法树」）----
-    cout << endl << "==== 语法树 ====" << endl;
+    // ---- 3. syntax tree (GUI menu: Parse tree) ----
+    cout << endl << "==== Syntax tree ====" << endl;
     if (origTree) analyzer->printTree(analyzer->root);
     else dumpTree(analyzer->root, 0);
 
-    // ---- 4. 语义分析 + 中间代码（对应 GUI 菜单「一键编译」）----
+    // ---- 4. semantic analysis + intermediate code (GUI menu: Compile and run) ----
     CodeGenerator gen;
     if (!gen.generate(analyzer->root)) {
         cout.rdbuf(realOut);
-        cout << endl << "==== 语义错误 (" << gen.errors.size() << ") ====" << endl;
+        cout << endl << "==== Semantic errors (" << gen.errors.size() << ") ====" << endl;
         for (size_t i = 0; i < gen.errors.size(); i++) cout << gen.errors[i] << endl;
         return 1;
     }
@@ -110,15 +112,15 @@ int main(int argc, char** argv)
     ofstream irf(irPath.c_str());
     irf << listing;
     irf.close();
-    cout << endl << "==== 中间代码（四元式）: " << irPath << " ====" << endl << listing;
+    cout << endl << "==== Intermediate code (quadruples): " << irPath << " ====" << endl << listing;
 
-    // ---- 5. 在虚拟机上运行 ----
+    // ---- 5. run on the virtual machine ----
     if (run) {
-        cout << endl << "==== 运行 ====" << endl;
+        cout << endl << "==== Run ====" << endl;
         cout.rdbuf(realOut);
         StdIO io;
         Vm vm(gen.ir, io);
-        if (!vm.run()) { cout << "运行错误：" << vm.error << endl; return 1; }
+        if (!vm.run()) { cout << "Runtime error: " << vm.error << endl; return 1; }
     }
     cout.rdbuf(realOut);
     return 0;

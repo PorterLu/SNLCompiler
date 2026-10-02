@@ -55,7 +55,7 @@ bool wordScanner::isChar()
 		}
     }
 
-	string str="程序第"+lineStr(curLine)+"行有错误单词： "+tempString;
+	string str="line "+lineStr(curLine)+": bad token: "+tempString;
 	tempString="";
 	error.push_back(str);
 	wordErrorState=true;
@@ -134,7 +134,7 @@ bool wordScanner::isDoubleBoundary()
     else
 	{
         undoChar();
-        str="程序第"+lineStr(curLine)+"行有错误单词： "+tempString;
+        str="line "+lineStr(curLine)+": bad token: "+tempString;
 		error.push_back(str);
 		wordErrorState=true;
 		tempString="";
@@ -161,9 +161,9 @@ bool wordScanner::isNotes()
 	if(ch!='}')
 	{
 		 string str;
-	     str="程序第";
+	     str="line ";
 	     str+=lineStr(curLine);
-	     str+="行有错误单词： ";
+	     str+=": bad token: ";
 	     str+=tempString;
 	     tempString="";
 	     error.push_back(str);
@@ -199,7 +199,7 @@ bool wordScanner::isString()
 	}
 	if(ch!='"')
 	{
-		error.push_back("程序第"+lineStr(line)+"行有错误单词： \""+tempString);
+		error.push_back("line "+lineStr(line)+": bad token: \""+tempString);
 		wordErrorState=true;
 		tempString="";
 		return false;
@@ -335,7 +335,7 @@ void wordScanner::printResult()
 	for(i=0;i<tokenList.num;i++)
 	{
 		token=&tokenList.List[i];
-		cout<<token->name<<" "<<token->type<<" 第"<<token->line<<"行"<<endl;
+		cout<<token->name<<" "<<token->type<<" line "<<token->line<<""<<endl;
 	}
 }
 
@@ -359,7 +359,7 @@ void wordScanner::start()
     cout<<"word start"<<endl;
 	int ans; //result flag
 	char ch;
-	cout<<"----------------------词法分析---------------------"<<endl;
+	cout<<"----------------------lexical analysis---------------------"<<endl;
 	while(!file.eof())//file not finished
 	{
 		size_t errBefore=error.size();
@@ -378,11 +378,11 @@ void wordScanner::start()
 			 ch=getChar();
 			 if(file.eof()) break; //reached end of file (the source did not end with '.'), terminate normally
 			 string str;
-             str="未知错误 ";
+             str="unknown token ";
              str+=ch;
-             str+=" 第";
+             str+=" line ";
              str+=lineStr(curLine);
-             str+="行";
+             str+="";
              tempString="";
              error.push_back(str);
              wordErrorState=true;

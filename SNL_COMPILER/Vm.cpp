@@ -21,11 +21,11 @@ int Vm::addr(const Operand& o)
     else if (o.kind == Operand::K_REF)
     {
         int slot = display[o.level] + o.value;
-        if (slot < 0 || slot >= (int)mem.size()) throw string("内存地址越界");
+        if (slot < 0 || slot >= (int)mem.size()) throw string("memory address out of range");
         a = mem[slot];                            // the slot holds the address of the actual argument
     }
-    else throw string("操作数不是变量");
-    if (a < 0 || a >= (int)mem.size()) throw string("内存地址越界");
+    else throw string("operand is not a variable");
+    if (a < 0 || a >= (int)mem.size()) throw string("memory address out of range");
     return a;
 }
 int Vm::val(const Operand& o)
@@ -36,7 +36,7 @@ int Vm::val(const Operand& o)
 int Vm::jump(const Operand& label)
 {
     int l = label.value;
-    if (l < 0 || l >= (int)labelPos.size() || labelPos[l] < 0) throw string("跳转到不存在的标号");
+    if (l < 0 || l >= (int)labelPos.size() || labelPos[l] < 0) throw string("jump to a nonexistent label");
     return labelPos[l];
 }
 
@@ -45,45 +45,45 @@ bool Vm::run()
     try
     {
         sp = ir.globalWords; pc = ir.entry; display[0] = 0;
-        if (sp >= (int)mem.size()) throw string("内存不够");
+        if (sp >= (int)mem.size()) throw string("out of memory");
         for (;;)
         {
-            if (++steps > maxSteps) throw string("执行步数超过上限，可能是死循环");
-            if (pc < 0 || pc >= (int)ir.code.size()) throw string("程序计数器越界");
+            if (++steps > maxSteps) throw string("step limit exceeded, possibly an infinite loop");
+            if (pc < 0 || pc >= (int)ir.code.size()) throw string("program counter out of range");
             const Quad& q = ir.code[pc];
             const string& op = q.op;
             pc++;
             if (op == "ADD") mem[addr(q.r)] = val(q.a) + val(q.b);
             else if (op == "SUB") mem[addr(q.r)] = val(q.a) - val(q.b);
             else if (op == "MUL") mem[addr(q.r)] = val(q.a) * val(q.b);
-            else if (op == "DIV") { int d = val(q.b); if (d == 0) throw string("除数为零"); mem[addr(q.r)] = val(q.a) / d; }
+            else if (op == "DIV") { int d = val(q.b); if (d == 0) throw string("division by zero"); mem[addr(q.r)] = val(q.a) / d; }
             else if (op == "LT") mem[addr(q.r)] = val(q.a) < val(q.b);
             else if (op == "EQ") mem[addr(q.r)] = val(q.a) == val(q.b);
             else if (op == "MOV") mem[addr(q.r)] = val(q.a);
             else if (op == "COPY")
             {
                 int s = addr(q.a), d = addr(q.r), n = q.a.size;
-                if (s + n > (int)mem.size() || d + n > (int)mem.size()) throw string("内存地址越界");
+                if (s + n > (int)mem.size() || d + n > (int)mem.size()) throw string("memory address out of range");
                 for (int k = 0; k < n; k++) mem[d + k] = mem[s + k];
             }
             else if (op == "LD")
             {
                 int a = addr(q.a) + val(q.b);
-                if (a < 0 || a >= (int)mem.size()) throw string("内存地址越界");
+                if (a < 0 || a >= (int)mem.size()) throw string("memory address out of range");
                 mem[addr(q.r)] = mem[a];
             }
             else if (op == "ST")
             {
                 int a = addr(q.b) + val(q.r);
-                if (a < 0 || a >= (int)mem.size()) throw string("内存地址越界");
+                if (a < 0 || a >= (int)mem.size()) throw string("memory address out of range");
                 mem[a] = val(q.a);
             }
             else if (op == "ADDR") mem[addr(q.r)] = addr(q.a) + val(q.b);
             else if (op == "JMP") pc = jump(q.a);
             else if (op == "JF") { if (val(q.a) == 0) pc = jump(q.r); }
             else if (op == "LABEL" || op == "PROC" || op == "ENDP" || op == "ENTRY") {}
-            else if (op == "READ") { int v; if (!io.readInt(v)) throw string("read：没有输入了"); mem[addr(q.r)] = v; }
-            else if (op == "READC") { char ch; if (!io.readChar(ch)) throw string("read：没有输入了"); mem[addr(q.r)] = (unsigned char)ch; }
+            else if (op == "READ") { int v; if (!io.readInt(v)) throw string("read: no more input"); mem[addr(q.r)] = v; }
+            else if (op == "READC") { char ch; if (!io.readChar(ch)) throw string("read: no more input"); mem[addr(q.r)] = (unsigned char)ch; }
             else if (op == "WRITE") { stringstream ss; ss << val(q.a) << "\n"; io.write(ss.str()); }
             else if (op == "WRITEC") { string s(1, (char)val(q.a)); io.write(s + "\n"); }
             else if (op == "WRITES") io.write(ir.strings[q.a.value] + "\n");
@@ -97,8 +97,8 @@ bool Vm::run()
             {
                 const ProcInfo& p = ir.procs[q.a.value];
                 int base = sp;
-                if (base + p.frameWords >= (int)mem.size()) throw string("栈溢出（递归太深？）");
-                if ((int)args.size() != p.paramWords) throw string("实参与形参的字数不符");
+                if (base + p.frameWords >= (int)mem.size()) throw string("stack overflow (recursion too deep?)");
+                if ((int)args.size() != p.paramWords) throw string("argument/parameter word count mismatch");
                 for (int k = 0; k < p.frameWords; k++) mem[base + k] = k < (int)args.size() ? args[k] : 0;
                 Frame f; f.level = p.level; f.savedDisplay = display[p.level]; f.base = base; f.retPc = pc;
                 frames.push_back(f);
@@ -109,14 +109,14 @@ bool Vm::run()
             }
             else if (op == "RET")
             {
-                if (frames.empty()) throw string("不在过程中执行 RET");
+                if (frames.empty()) throw string("RET executed outside a procedure");
                 Frame f = frames.back(); frames.pop_back();
                 display[f.level] = f.savedDisplay;
                 sp = f.base;
                 pc = f.retPc;
             }
             else if (op == "HALT") break;
-            else throw string("未知的四元式 " + op);
+            else throw string("unknown quadruple " + op);
         }
     }
     catch (string& e) { error = e; return false; }

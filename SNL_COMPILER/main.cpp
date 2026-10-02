@@ -70,8 +70,8 @@ struct DialogIO : VmIO
      {
           return DialogBoxParam (hInst, MAKEINTRESOURCE (IDC_INPUT_DIALOG), owner, (DLGPROC) InputDlg, (LPARAM) prompt) == IDOK ;
      }
-     bool readInt (int& v) { if (!ask ("程序执行到 read，请输入一个整数：")) return false ; v = atoi (inputText.c_str ()) ; return true ; }
-     bool readChar (char& c) { if (!ask ("程序执行到 read，请输入一个字符：")) return false ; c = inputText.empty () ? ' ' : inputText[0] ; return true ; }
+     bool readInt (int& v) { if (!ask ("The program reached a read. Enter an integer:")) return false ; v = atoi (inputText.c_str ()) ; return true ; }
+     bool readChar (char& c) { if (!ask ("The program reached a read. Enter a character:")) return false ; c = inputText.empty () ? ' ' : inputText[0] ; return true ; }
      void write (const string& s) { out += s ; }
 } ;
 int vScroll=0;
@@ -172,7 +172,7 @@ bool isNum(string str)  //test whether a string can be converted to a number
 //pop up a confirmation box
 AskConfirmation (HWND hwnd)
 {
-     return MessageBox (hwnd, TEXT ("是否想要推出编译器?"),
+     return MessageBox (hwnd, TEXT ("Quit the compiler?"),
                         szAppName, MB_YESNO | MB_ICONQUESTION) ;
 }
 
@@ -506,7 +506,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     if (!PopFileRead (hwndEdit, szFileName))
                     {
-                         OkMessage (hwnd, TEXT ("无法打开文件%s!"),
+                         OkMessage (hwnd, TEXT ("Cannot open file %s!"),
                                     szTitleName) ;
                          szFileName[0]  = '\0' ;
                          szTitleName[0] = '\0' ;
@@ -520,7 +520,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 //lexical analysis was chosen
                 if(szFileName[0]=='\0')
                 {
-                    MessageBox(hwnd,"请打开文件","提醒",MB_OK);
+                    MessageBox(hwnd,"Please open a file","Notice",MB_OK);
                     return 0;
                 }
                 fileName=szFileName;
@@ -538,13 +538,13 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                  //did lexical analysis report an error
                 if(wordErrorState==true)
                 {
-                    MessageBox(hwnd,"词法错误","提醒",MB_OK);
+                    MessageBox(hwnd,"Lexical error","Notice",MB_OK);
                     return 0;
                 }
                 //has lexical analysis been run yet
                 if(fileName=="")
                 {
-                    MessageBox(hwnd,"先进行词法分析","提醒",MB_OK);
+                    MessageBox(hwnd,"Run lexical analysis first","Notice",MB_OK);
                     return 0;
                 }
                 //start syntax analysis
@@ -558,38 +558,34 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 hDlgChild = CreateDialog(hInst,MAKEINTRESOURCE(IDC_GRAMMAR_DIALOG),hwnd,GrammarDlg);
                 ShowWindow(hDlgChild,SW_SHOW);
                 return 0;
-             case IDC_AUTHOR:
-                 //show the author information
-                MessageBox(hwnd," 21172602 卢琨\n 21172603 刘璎慧\n 21172617 张智超","开发人员",MB_OK);
-                    return 0;
              case IDC_SAVE:
                if (szFileName[0])
                {
-                    if (PopFileWrite (hwndEdit, szFileName)&&MessageBox(hwnd,"确定要保存吗",szFileName,MB_YESNO)==IDYES)
+                    if (PopFileWrite (hwndEdit, szFileName)&&MessageBox(hwnd,"Save this file?",szFileName,MB_YESNO)==IDYES)
                          return 1 ;
                     else
                     {
-                         OkMessage (hwnd, TEXT ("不可写文件 %s"),
+                         OkMessage (hwnd, TEXT ("Cannot write file %s"),
                                     szTitleName) ;
                          return 0 ;
                     }
                }
                else
                {
-                   MessageBox(hwnd,"还未打开文件",NULL,MB_OK);
+                   MessageBox(hwnd,"No file is open",NULL,MB_OK);
                }
                return 0;
 
              case IDC_TREE:
                  if(wordErrorState==true)
                 {
-                    MessageBox(hwnd,"词法错误","提醒",MB_OK);
+                    MessageBox(hwnd,"Lexical error","Notice",MB_OK);
                     return 0;
                 }
                 //has lexical analysis been run yet
                 if(fileName=="")
                 {
-                    MessageBox(hwnd,"先进行词法分析","提醒",MB_OK);
+                    MessageBox(hwnd,"Run lexical analysis first","Notice",MB_OK);
                     return 0;
                 }
                 //start syntax analysis
@@ -598,7 +594,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 grammarProject->start();
                 if(grammarErrorState==true)
                 {
-                    MessageBox(hwnd,"语法分析有错","提醒",MB_OK);
+                    MessageBox(hwnd,"Syntax analysis failed","Notice",MB_OK);
                     return 0;
                 }
                 hDlgChild = CreateDialog(hInst,MAKEINTRESOURCE(IDC_TREE_DIALOG),hwnd,TreeDlg);
@@ -608,7 +604,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 //one-click compile: lexical -> syntax -> semantic analysis and intermediate code generation -> run directly on the virtual machine
                 if(szFileName[0]=='\0')
                 {
-                    MessageBox(hwnd,"请打开文件","提醒",MB_OK);
+                    MessageBox(hwnd,"Please open a file","Notice",MB_OK);
                     return 0;
                 }
                 {
@@ -617,7 +613,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     ws->start();
                     if(wordErrorState)
                     {
-                        report="词法错误：\r\n";
+                        report="Lexical errors:\r\n";
                         for(unsigned i=0;i<ws->error.size();i++) report+=ws->error[i]+"\r\n";
                         delete ws;
                     }
@@ -629,17 +625,17 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                         ga->start();
                         if(grammarErrorState)
                         {
-                            report="语法错误：\r\n";
+                            report="Syntax errors:\r\n";
                             for(unsigned i=0;i<ga->itemList.size();i++)
                                 if(ga->itemList[i].oper=="error")
-                                    report+="第"+ga->itemList[i].right+"行：单词 "+ga->itemList[i].left+" 附近有语法错误\r\n";
+                                    report+="line "+ga->itemList[i].right+": syntax error near token "+ga->itemList[i].left+"\r\n";
                         }
                         else
                         {
                             CodeGenerator gen;
                             if(!gen.generate(ga->root))
                             {
-                                report="语义错误：\r\n";
+                                report="Semantic errors:\r\n";
                                 for(unsigned i=0;i<gen.errors.size();i++) report+=gen.errors[i]+"\r\n";
                             }
                             else
@@ -654,9 +650,9 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 DialogIO io(hwnd);
                                 Vm vm(gen.ir,io);
                                 bool ok=vm.run();
-                                report="已生成中间代码："+irPath+"\r\n\r\n==== 程序输出 ====\r\n"+CrLf(io.out);
-                                if(!ok) report+="运行错误："+vm.error+"\r\n";
-                                report+="\r\n==== 中间代码（四元式） ====\r\n"+CrLf(listing);
+                                report="Intermediate code written to: "+irPath+"\r\n\r\n==== Program output ====\r\n"+CrLf(io.out);
+                                if(!ok) report+="Runtime error: "+vm.error+"\r\n";
+                                report+="\r\n==== Intermediate code (quadruples) ====\r\n"+CrLf(listing);
                             }
                         }
                         delete ga;

@@ -828,7 +828,7 @@ void GrammarAnalyzer::start()
                     break;
                }
                tempOperation->left=topItem.left;
-               tempOperation->oper="替换";
+               tempOperation->oper="expand";
                tempProduction=production[llTable[tempNum][position(token.type)-68]];
                str="";
                for(i=tempProduction.right.size()-1;i>=0;i--)
@@ -860,7 +860,7 @@ void GrammarAnalyzer::start()
            {
                analyzeStack.pop();
                tempOperation->left=token.name;
-               tempOperation->oper="匹配";
+               tempOperation->oper="match";
                tempRoot->value=token.name;   //record the lexeme on the tree leaf; code generation needs it
                tempRoot->line=token.line;
                itemList.push_back(*tempOperation);
@@ -888,7 +888,7 @@ void GrammarAnalyzer::start()
            else if(tempNum==106)
            {
                tempOperation->left="ε";
-               tempOperation->oper="匹配";
+               tempOperation->oper="match";
                itemList.push_back(*tempOperation);
                analyzeStack.pop();
                tempRoot=tempRoot->father;       //go back to the parent node

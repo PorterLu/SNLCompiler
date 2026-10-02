@@ -18,7 +18,6 @@
 #define IDC_WORD                        40006
 #define IDC_GRAMMAR                     40007
 #define IDC_TREE                        40008
-#define IDC_AUTHOR                      40009
 #define IDC_SAVE                        40010
 #define IDC_BUILD                       40011
 
