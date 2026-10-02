@@ -34,8 +34,28 @@ produces `tests/<name>.expected`; `tests/e*.txt` must be rejected.
 The sources are UTF-8 (CRLF). The Windows build passes `-finput-charset=UTF-8 -fexec-charset=GBK`
 so that the ANSI GUI still shows Chinese correctly; the Code::Blocks project has these options set.
 
-One extension to standard SNL: `write("text")` prints a string constant, so a hello world is
-`program hello begin write("hello world") end.` (see `cli/tests/t11_hello.txt`).
+### Hello world
+
+One extension to standard SNL is `write("text")`, which prints a string constant, so a hello
+world program is just:
+
+```snl
+program hello
+begin
+   write("hello world")
+end.
+```
+
+```sh
+cd cli && make
+./build/snl_cli tests/t11_hello.txt --run
+```
+
+![hello world demo](docs/hello_world.png)
+
+The compiler scans, parses and type-checks the program, generates the quadruples shown above,
+then the virtual machine runs them and prints `hello world`. An addition program that reads two
+numbers and writes their sum is in `cli/tests/t12_add.txt`.
 
 In the Windows GUI the same pipeline is behind the menu item 编译 → 一键编译: lexical, syntax and
 semantic analysis in one click, then the program runs on the virtual machine (a dialog asks for
